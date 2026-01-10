@@ -1,31 +1,38 @@
 import { StatusBar } from "expo-status-bar";
-import { Text, View } from "react-native";
+import { View, KeyboardAvoidingView, Platform, Pressable, Keyboard } from "react-native";
+import AppHeader from "../components/AppHeader";
+import CountrySelector from "../components/CountrySelector";
+import PhoneInput from "../components/PhoneInput";
+import StartChatButton from "../components/StartChatButton";
+import ProTipCard from "../components/ProTipCard";
+import CountryModal from "../components/CountryModal";
+import { useAppStore } from "../store/useAppStore";
 
 export default function App() {
+  const startChat = useAppStore((state) => state.startChat);
+  const isValidNumber = useAppStore((state) => state.isValidNumber());
+
   return (
-    <View className="flex-1 bg-white dark:bg-black items-center justify-center px-8">
-      {/* Heading */}
-      <Text className="text-4xl font-extrabold text-gray-800 dark:text-white mb-3 tracking-tight">
-        🚀 Welcome
-      </Text>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+      <Pressable onPress={Keyboard.dismiss} className="flex-1">
+        <View className="flex-1 bg-linear-to-b from-emerald-200 to-white dark:from-gray-900 dark:to-gray-800">
+          <AppHeader />
 
-      {/* Subheading */}
-      <Text className="text-xl dark:text-white text-gray-700 mb-8 text-center leading-relaxed">
-        Build beautiful apps with{" "}
-        <Text className="text-blue-500 font-semibold">
-          Expo (Router) + Uniwind 🔥
-        </Text>
-      </Text>
+          <View className="flex-1 px-5">
+            <View className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl">
+              <CountrySelector />
+              <PhoneInput />
+              <StartChatButton onPress={startChat} isValid={isValidNumber} />
+            </View>
 
-      {/* Instruction text */}
-      <Text className="text-base text-gray-600 dark:text-white text-center max-w-sm">
-        Start customizing your app by editing{" "}
-        <Text className="font-semibold text-gray-800 dark:text-white">
-          app/index.tsx
-        </Text>
-      </Text>
+            <ProTipCard />
+          </View>
 
-      <StatusBar style="dark" />
-    </View>
+          <CountryModal />
+
+          <StatusBar style="auto" />
+        </View>
+      </Pressable>
+    </KeyboardAvoidingView>
   );
 }
