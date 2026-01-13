@@ -2,6 +2,17 @@ import { create } from "zustand";
 import * as Linking from "expo-linking";
 import * as Haptics from "expo-haptics";
 import { database } from "../db";
+import { getAllCountries, FlagType } from "react-native-country-picker-modal";
+import type { Country as PickerCountry } from "react-native-country-picker-modal";
+
+// Cache for countries data
+let countriesCache: PickerCountry[] | null = null;
+
+const loadCountries = async (): Promise<PickerCountry[]> => {
+  if (countriesCache) return countriesCache;
+  countriesCache = await getAllCountries(FlagType.EMOJI);
+  return countriesCache;
+};
 
 interface Country {
   code: string;
@@ -66,6 +77,46 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setPhoneNumber: (phone) => {
     const cleaned = phone.replace(/\D/g, "");
+
+    // Check if phone starts with + or has many digits (likely includes country code)
+    if (phone.startsWith("+") || cleaned.length > 10) {
+      // Try to detect country code asynchronously
+      loadCountries().then((countries) => {
+        // Sort by calling code length (longest first) to match more specific codes first
+        const sorted = [...countries].sort((a, b) => {
+          const aCode = a.callingCode?.[0] || "";
+          const bCode = b.callingCode?.[0] || "";
+          return bCode.length - aCode.length;
+        });
+
+        for (const country of sorted) {
+          const callingCode = country.callingCode?.[0];
+          if (callingCode && cleaned.startsWith(callingCode)) {
+            // Found matching country code
+            const phoneWithoutCode = cleaned.substring(callingCode.length);
+            const formatted = formatPhoneNumber(phoneWithoutCode);
+
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            set({
+              selectedCountry: {
+                code: `+${callingCode}`,
+                country: country.cca2,
+                flag: country.flag || "",
+              },
+              selectedCountryCode: `+${callingCode}`,
+              phoneNumber: formatted,
+              rawPhoneNumber: phoneWithoutCode,
+            });
+            return;
+          }
+        }
+
+        // No country code detected, just format the number
+        const formatted = formatPhoneNumber(cleaned);
+        set({ phoneNumber: formatted, rawPhoneNumber: cleaned });
+      });
+      return;
+    }
 
     // No country code detected, just format the number
     const formatted = formatPhoneNumber(cleaned);

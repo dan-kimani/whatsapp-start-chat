@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, useColorScheme } from "react-native";
 import CountryPicker, { Country, CountryCode, DARK_THEME } from "react-native-country-picker-modal";
 import { useAppStore } from "../store/useAppStore";
 
@@ -7,6 +7,8 @@ export default function CountrySelector() {
   const selectedCountry = useAppStore((state) => state.selectedCountry);
   const setSelectedCountry = useAppStore((state) => state.setSelectedCountry);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const onSelectCountry = (country: Country) => {
     setSelectedCountry({
@@ -37,7 +39,7 @@ export default function CountrySelector() {
           onOpen={() => setIsPickerVisible(true)}
           renderFlagButton={({ onOpen }) => (
             <Pressable onPress={onOpen} className="flex-row items-center px-4 py-4 w-full">
-              <CountryPicker countryCode={countryCode} withFlag withCallingCodeButton={false} withCountryNameButton={false} onSelect={() => {}} visible={false} theme={DARK_THEME} />
+              <CountryPicker countryCode={countryCode} withFlag withCallingCodeButton={false} withCountryNameButton={false} onSelect={() => {}} visible={false} theme={isDark ? DARK_THEME : undefined} />
               <Text className="ml-2 mr-1 text-lg font-semibold text-gray-800 dark:text-white">{selectedCountry.code}</Text>
               <View className="ml-1">
                 <Text className="text-gray-400 text-xl">▼</Text>
@@ -45,7 +47,7 @@ export default function CountrySelector() {
               <Text className="text-gray-500 dark:text-gray-400 ml-2">({selectedCountry.country})</Text>
             </Pressable>
           )}
-          theme={DARK_THEME} // Ideally this should be dynamic based on color scheme
+          theme={isDark ? DARK_THEME : undefined}
           containerButtonStyle={{ alignItems: "center" }}
         />
       </View>
