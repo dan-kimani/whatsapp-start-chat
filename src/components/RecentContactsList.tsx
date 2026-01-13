@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import Reanimated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
+import { CountryCode } from "react-native-country-picker-modal";
+import CountryFlag from "react-native-country-flag";
 import { useAppStore } from "../store/useAppStore";
 
 interface RecentContact {
@@ -73,7 +75,9 @@ function ContactItem({ contact, onSelect, onDelete }: { contact: RecentContact; 
       <Pressable onPress={() => onSelect(contact)} className="bg-linear-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl mb-3 border-2 border-gray-100 dark:border-gray-700 p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center flex-1">
-            <Text className="text-4xl mr-3">{contact.flag}</Text>
+            <View className="mr-3 rounded-md overflow-hidden">
+              <CountryFlag isoCode={contact.country as CountryCode} size={32} />
+            </View>
             <View className="flex-1">
               <Text className="text-xs text-gray-500 dark:text-gray-400 mb-1">{contact.country}</Text>
               <Text className="text-base font-bold text-gray-900 dark:text-white">
