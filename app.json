@@ -1,12 +1,29 @@
 {
   "expo": {
+    "name": "WhatsApp Quick Chat",
+    "slug": "whatsapp-start-chat",
+    "version": "0.0.1",
     "scheme": "acme",
+    "jsEngine": "hermes",
     "userInterfaceStyle": "automatic",
     "orientation": "default",
     "web": {
       "output": "static"
     },
-    "name": "whatsapp-start-chat",
-    "slug": "whatsapp-start-chat"
+    "icon": "./assets/icon.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.whatsappstartchat",
+      "versionCode": 1,
+      "permissions": []
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3c82c227-7f98-4ed0-b40f-b41c19b9f336"
+      }
+    }
   }
 }

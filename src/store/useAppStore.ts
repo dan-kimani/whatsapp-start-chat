@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import * as Linking from "expo-linking";
+import * as Haptics from "expo-haptics";
+import { database } from "../db";
 
 interface Country {
   code: string;
@@ -7,72 +9,143 @@ interface Country {
   flag: string;
 }
 
-interface AppStore {
+interface RecentContactData {
   phoneNumber: string;
-  selectedCountry: Country;
-  modalVisible: boolean;
-  isPressed: boolean;
-  setPhoneNumber: (phone: string) => void;
-  setSelectedCountry: (country: Country) => void;
-  setModalVisible: (visible: boolean) => void;
-  setIsPressed: (pressed: boolean) => void;
-  isValidNumber: () => boolean;
-  startChat: () => void;
+  countryCode: string;
+  country: string;
+  flag: string;
+  usedAt: Date;
 }
 
-const COUNTRY_CODES = [
-  { code: "+254", country: "KE", flag: "🇰🇪" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+86", country: "CN", flag: "🇨🇳" },
-  { code: "+81", country: "JP", flag: "🇯🇵" },
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+33", country: "FR", flag: "🇫🇷" },
-  { code: "+55", country: "BR", flag: "🇧🇷" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+7", country: "RU", flag: "🇷🇺" },
-  { code: "+82", country: "KR", flag: "🇰🇷" },
-  { code: "+39", country: "IT", flag: "🇮🇹" },
-  { code: "+34", country: "ES", flag: "🇪🇸" },
-  { code: "+52", country: "MX", flag: "🇲🇽" },
-  { code: "+62", country: "ID", flag: "🇮🇩" },
-  { code: "+31", country: "NL", flag: "🇳🇱" },
-  { code: "+90", country: "TR", flag: "🇹🇷" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+27", country: "ZA", flag: "🇿🇦" },
-  { code: "+234", country: "NG", flag: "🇳🇬" },
-  { code: "+20", country: "EG", flag: "🇪🇬" },
-  { code: "+92", country: "PK", flag: "🇵🇰" },
-  { code: "+880", country: "BD", flag: "🇧🇩" },
-  { code: "+84", country: "VN", flag: "🇻🇳" },
-  { code: "+66", country: "TH", flag: "🇹🇭" },
-  { code: "+60", country: "MY", flag: "🇲🇾" },
-  { code: "+63", country: "PH", flag: "🇵🇭" },
-  { code: "+65", country: "SG", flag: "🇸🇬" },
-  { code: "+48", country: "PL", flag: "🇵🇱" },
-];
+// Format phone number with spaces for better readability
+const formatPhoneNumber = (value: string): string => {
+  const cleaned = value.replace(/\D/g, "");
+  if (cleaned.length === 0) return "";
+
+  // Format in groups of 3-4 digits
+  const parts: string[] = [];
+  let remaining = cleaned;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= 4) {
+      parts.push(remaining);
+      break;
+    } else {
+      parts.push(remaining.slice(0, 3));
+      remaining = remaining.slice(3);
+    }
+  }
+
+  return parts.join(" ");
+};
+
+interface AppStore {
+  phoneNumber: string;
+  rawPhoneNumber: string;
+  selectedCountry: Country;
+  selectedCountryCode?: string;
+  isPressed: boolean;
+  recentContacts: RecentContactData[];
+  setPhoneNumber: (phone: string) => void;
+  setSelectedCountry: (country: Country) => void;
+  setIsPressed: (pressed: boolean) => void;
+  isValidNumber: () => boolean;
+  startChat: () => Promise<void>;
+  loadRecentContacts: () => Promise<void>;
+  selectRecentContact: (contact: RecentContactData) => void;
+  deleteRecentContact: (phoneNumber: string) => Promise<void>;
+}
 
 export const useAppStore = create<AppStore>((set, get) => ({
   phoneNumber: "",
-  selectedCountry: COUNTRY_CODES[0],
-  modalVisible: false,
+  rawPhoneNumber: "",
+  selectedCountry: { code: "+7", country: "RU", flag: "🇷🇺" },
+  selectedCountryCode: "+7",
   isPressed: false,
-  setPhoneNumber: (phone) => set({ phoneNumber: phone }),
-  setSelectedCountry: (country) => set({ selectedCountry: country }),
-  setModalVisible: (visible) => set({ modalVisible: visible }),
-  setIsPressed: (pressed) => set({ isPressed: pressed }),
-  isValidNumber: () => get().phoneNumber.trim().length >= 6,
-  startChat: () => {
-    const { phoneNumber, selectedCountry } = get();
-    if (!phoneNumber.trim()) return;
+  recentContacts: [],
 
-    const fullNumber = `${selectedCountry.code}${phoneNumber}`.replace(/\D/g, "");
-    const whatsappUrl = `https://wa.me/${fullNumber}`;
+  setPhoneNumber: (phone) => {
+    const cleaned = phone.replace(/\D/g, "");
+
+    // No country code detected, just format the number
+    const formatted = formatPhoneNumber(cleaned);
+    set({ phoneNumber: formatted, rawPhoneNumber: cleaned });
+  },
+
+  setSelectedCountry: (country) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    set({ selectedCountry: country, selectedCountryCode: country.code });
+  },
+
+  setIsPressed: (pressed) => set({ isPressed: pressed }),
+
+  isValidNumber: () => get().rawPhoneNumber.trim().length >= 9,
+
+  startChat: async () => {
+    const { rawPhoneNumber, selectedCountry } = get();
+    if (!rawPhoneNumber.trim()) return;
+
+    // Haptic feedback on button press
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const fullNumber = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
+    const whatsappUrl = `whatsapp://send?phone=${fullNumber}`;
+
+    // Save to recent contacts
+    try {
+      await database.saveContact(rawPhoneNumber, selectedCountry.code, selectedCountry.country, selectedCountry.flag);
+      get().loadRecentContacts();
+    } catch (error) {
+      console.error("Failed to save recent contact:", error);
+    }
+
+    // Open WhatsApp - Android will show chooser if both apps are installed
     Linking.openURL(whatsappUrl);
+  },
+
+  loadRecentContacts: async () => {
+    try {
+      const contacts = await database.getRecentContacts(5);
+
+      const recentContactsData: RecentContactData[] = contacts.map((contact) => ({
+        phoneNumber: contact.phone_number,
+        countryCode: contact.country_code,
+        country: contact.country,
+        flag: contact.flag,
+        usedAt: new Date(contact.used_at),
+      }));
+
+      set({ recentContacts: recentContactsData });
+    } catch (error) {
+      console.error("Failed to load recent contacts:", error);
+      set({ recentContacts: [] });
+    }
+  },
+
+  selectRecentContact: (contact) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const country = {
+      code: contact.countryCode,
+      country: contact.country,
+      flag: contact.flag,
+    };
+    set({
+      selectedCountry: country,
+      selectedCountryCode: contact.countryCode,
+      rawPhoneNumber: contact.phoneNumber,
+      phoneNumber: formatPhoneNumber(contact.phoneNumber),
+    });
+  },
+
+  deleteRecentContact: async (phoneNumber) => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await database.deleteContact(phoneNumber);
+      get().loadRecentContacts();
+    } catch (error) {
+      console.error("Failed to delete recent contact:", error);
+    }
   },
 }));
 
-export { COUNTRY_CODES };
 export type { Country };
