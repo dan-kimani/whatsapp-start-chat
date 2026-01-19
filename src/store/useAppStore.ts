@@ -70,8 +70,8 @@ interface AppStore {
 export const useAppStore = create<AppStore>((set, get) => ({
   phoneNumber: "",
   rawPhoneNumber: "",
-  selectedCountry: { code: "+7", country: "RU", flag: "🇷🇺" },
-  selectedCountryCode: "+7",
+  selectedCountry: { code: "+254", country: "KE", flag: "🇰🇪" },
+  selectedCountryCode: "+254",
   isPressed: false,
   recentContacts: [],
 
