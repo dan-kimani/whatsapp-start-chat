@@ -9,7 +9,6 @@ import StartChatButton from "../components/StartChatButton";
 import { useAppStore } from "../store/useAppStore";
 
 export default function App() {
-  const startChat = useAppStore((state) => state.startChat);
   const isValidNumber = useAppStore((state) => state.isValidNumber());
 
   return (
@@ -27,7 +26,7 @@ export default function App() {
             <View className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 mb-4">
               <CountrySelector />
               <PhoneInput />
-              <StartChatButton onPress={startChat} isValid={isValidNumber} />
+              <StartChatButton isValid={isValidNumber} />
             </View>
 
             <RecentContactsList />

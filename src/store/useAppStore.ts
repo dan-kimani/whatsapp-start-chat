@@ -1,6 +1,9 @@
 import { create } from "zustand";
+import { Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as Haptics from "expo-haptics";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as Contacts from "expo-contacts";
 import { database } from "../db";
 import { getAllCountries, FlagType } from "react-native-country-picker-modal";
 import type { Country as PickerCountry } from "react-native-country-picker-modal";
@@ -31,6 +34,12 @@ function detectCountry(cleaned: string): PickerCountry | null {
   return null;
 }
 
+function findCountryByCallingCode(callingCode: string): PickerCountry | undefined {
+  if (!countriesCache) return undefined;
+  const digits = callingCode.replace(/\D/g, "");
+  return countriesCache.find((c) => c.callingCode?.[0] === digits);
+}
+
 interface Country {
   code: string;
   country: string;
@@ -46,7 +55,7 @@ interface RecentContactData {
 }
 
 // Format phone number with spaces for better readability
-const formatPhoneNumber = (value: string): string => {
+export const formatPhoneNumber = (value: string): string => {
   const cleaned = value.replace(/\D/g, "");
   if (cleaned.length === 0) return "";
 
@@ -79,6 +88,10 @@ interface AppStore {
   setCountryPickerOpen: (open: boolean) => void;
   isValidNumber: () => boolean;
   startChat: () => Promise<void>;
+  startCall: () => Promise<void>;
+  openWhatsApp: (countryCode: string, phoneNumber: string) => Promise<void>;
+  openDialer: (countryCode: string, phoneNumber: string) => Promise<void>;
+  saveContact: (countryCode: string, phoneNumber: string) => Promise<void>;
   loadRecentContacts: () => Promise<void>;
   selectRecentContact: (contact: RecentContactData) => void;
   deleteRecentContact: (phoneNumber: string) => Promise<void>;
@@ -157,7 +170,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     // Haptic feedback on button press
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const fullNumber = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
+    const digits = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
+    const fullNumber = `+${digits}`;
     const whatsappUrl = `whatsapp://send?phone=${fullNumber}`;
 
     // Save to recent contacts
@@ -170,19 +184,102 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Open WhatsApp - Android will show chooser if both apps are installed
     Linking.openURL(whatsappUrl);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  },
+
+  startCall: async () => {
+    const { rawPhoneNumber, selectedCountry } = get();
+    if (!rawPhoneNumber.trim()) return;
+
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const digits = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
+    const fullNumber = `+${digits}`;
+
+    try {
+      await database.saveContact(rawPhoneNumber, selectedCountry.code, selectedCountry.country, selectedCountry.flag);
+      get().loadRecentContacts();
+    } catch (error) {
+      console.error("Failed to save recent contact:", error);
+    }
+
+    Linking.openURL(`tel:${fullNumber}`);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  },
+
+  openDialer: async (countryCode, phoneNumber) => {
+    const digits = `${countryCode}${phoneNumber}`.replace(/\D/g, "");
+    const fullNumber = `+${digits}`;
+    const country = findCountryByCallingCode(countryCode);
+    await database.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "");
+    get().loadRecentContacts();
+    Linking.openURL(`tel:${fullNumber}`);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  },
+
+  openWhatsApp: async (countryCode, phoneNumber) => {
+    const digits = `${countryCode}${phoneNumber}`.replace(/\D/g, "");
+    const fullNumber = `+${digits}`;
+    const country = findCountryByCallingCode(countryCode);
+    await database.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "");
+    get().loadRecentContacts();
+    Linking.openURL(`whatsapp://send?phone=${fullNumber}`);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  },
+
+  saveContact: async (countryCode, phoneNumber) => {
+    const digits = `${countryCode}${phoneNumber}`.replace(/\D/g, "");
+    const fullNumber = `+${digits}`;
+
+    if (Platform.OS === "android") {
+      try {
+        await IntentLauncher.startActivityAsync("android.intent.action.INSERT", {
+          type: "vnd.android.cursor.dir/raw_contact",
+          extra: { phone: fullNumber },
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        // User cancelled
+      }
+    } else {
+      try {
+        const { status } = await Contacts.requestPermissionsAsync();
+        if (status !== "granted") return;
+        await Contacts.presentFormAsync(null, {
+          contactType: "person",
+          name: "",
+          phoneNumbers: [{ number: fullNumber, label: "mobile", id: "" }],
+        } as any);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        // User cancelled
+      }
+    }
   },
 
   loadRecentContacts: async () => {
     try {
       const contacts = await database.getRecentContacts(5);
 
-      const recentContactsData: RecentContactData[] = contacts.map((contact) => ({
-        phoneNumber: contact.phone_number,
-        countryCode: contact.country_code,
-        country: contact.country,
-        flag: contact.flag,
-        usedAt: new Date(contact.used_at),
-      }));
+      const recentContactsData: RecentContactData[] = contacts.map((contact) => {
+        // Backfill missing country/flag from old saves
+        let country = contact.country;
+        let flag = contact.flag;
+        if (!country || !flag) {
+          const found = findCountryByCallingCode(contact.country_code);
+          if (found) {
+            country = country || found.cca2;
+            flag = flag || found.flag || "";
+          }
+        }
+        return {
+          phoneNumber: contact.phone_number,
+          countryCode: contact.country_code,
+          country,
+          flag,
+          usedAt: new Date(contact.used_at),
+        };
+      });
 
       set({ recentContacts: recentContactsData });
     } catch (error) {
