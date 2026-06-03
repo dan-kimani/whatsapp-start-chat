@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import * as Clipboard from "expo-clipboard";
 
 export function useSmartClipboard(currentRawValue: string) {
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);
+  const rawValueRef = useRef(currentRawValue);
+  rawValueRef.current = currentRawValue;
 
   useEffect(() => {
     const checkClipboard = async () => {
@@ -21,7 +23,7 @@ export function useSmartClipboard(currentRawValue: string) {
       const validChars = /^[+\d\s\-\(\).]*$/;
 
       // Check against current value to avoid showing what user already typed
-      const isDifferent = content.replace(/\D/g, "") !== currentRawValue;
+      const isDifferent = content.replace(/\D/g, "") !== rawValueRef.current;
 
       if (digitCount >= 6 && digitCount <= 15 && validChars.test(content) && isDifferent) {
         setClipboardContent(content.trim());
@@ -42,7 +44,7 @@ export function useSmartClipboard(currentRawValue: string) {
     return () => {
       subscription.remove();
     };
-  }, [currentRawValue]);
+  }, []);
 
   return clipboardContent;
 }

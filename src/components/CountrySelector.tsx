@@ -1,56 +1,235 @@
-import { useState } from "react";
-import { Pressable, Text, View, useColorScheme } from "react-native";
-import CountryPicker, { Country, CountryCode, DARK_THEME } from "react-native-country-picker-modal";
-import { useAppStore } from "../store/useAppStore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  FlatList,
+  Keyboard,
+  Modal,
+  Pressable,
+  StatusBar,
+  Text,
+  TextInput,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import CountryFlag from "react-native-country-flag";
+import { ChevronDown, Search } from "lucide-react-native";
+import type { Country as PickerCountry, CountryCode } from "react-native-country-picker-modal";
 
-export default function CountrySelector() {
-  const selectedCountry = useAppStore((state) => state.selectedCountry);
-  const setSelectedCountry = useAppStore((state) => state.setSelectedCountry);
-  const [isPickerVisible, setIsPickerVisible] = useState(false);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+import { useAppStore, loadCountries } from "../store/useAppStore";
 
-  const onSelectCountry = (country: Country) => {
-    setSelectedCountry({
-      code: `+${country.callingCode[0]}`,
-      country: country.cca2 as string,
-      flag: country.flag as string, // Note: this might be empty depending on library version/props, but usually fine
-    });
-    setIsPickerVisible(false);
-  };
+const ROW_HEIGHT = 52;
+const SHEET_RATIO = 0.75;
 
-  const countryCode = selectedCountry.country as CountryCode;
+function getCountryName(country: PickerCountry): string {
+  if (typeof country.name === "string") return country.name;
+  return country.name.common || Object.values(country.name)[0] || country.cca2;
+}
+
+/** Trigger button — renders inside the ScrollView */
+export function CountrySelector() {
+  const selectedCountry = useAppStore((s) => s.selectedCountry);
+  const setOpen = useAppStore((s) => s.setCountryPickerOpen);
+  const isDark = useColorScheme() === "dark";
 
   return (
     <>
-      <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2 ml-1">Country Code</Text>
-      <View className="bg-gray-50 dark:bg-gray-700 rounded-2xl mb-5 active:bg-gray-100 dark:active:bg-gray-600 overflow-hidden">
-        <CountryPicker
-          countryCode={countryCode}
-          withFlag
-          withCallingCode
-          withCallingCodeButton
-          withFlagButton
-          withFilter
-          withModal
-          visible={isPickerVisible}
-          onSelect={onSelectCountry}
-          onClose={() => setIsPickerVisible(false)}
-          onOpen={() => setIsPickerVisible(true)}
-          renderFlagButton={({ onOpen }) => (
-            <Pressable onPress={onOpen} className="flex-row items-center px-4 py-4 w-full">
-              <CountryPicker countryCode={countryCode} withFlag withCallingCodeButton={false} withCountryNameButton={false} onSelect={() => {}} visible={false} theme={isDark ? DARK_THEME : undefined} />
-              <Text className="ml-2 mr-1 text-lg font-semibold text-gray-800 dark:text-white">{selectedCountry.code}</Text>
-              <View className="ml-1">
-                <Text className="text-gray-400 text-xl">▼</Text>
-              </View>
-              <Text className="text-gray-500 dark:text-gray-400 ml-2">({selectedCountry.country})</Text>
-            </Pressable>
-          )}
-          theme={isDark ? DARK_THEME : undefined}
-          containerButtonStyle={{ alignItems: "center" }}
-        />
-      </View>
+      <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2 ml-1">Country</Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        className="bg-gray-50 dark:bg-gray-700 rounded-xl mb-5 active:bg-gray-100 dark:active:bg-gray-600 overflow-hidden"
+      >
+        <View className="flex-row items-center px-4 py-4 w-full">
+          <CountryFlag isoCode={selectedCountry.country as CountryCode} size={24} />
+          <Text className="ml-2 mr-1 text-lg font-semibold text-gray-800 dark:text-white">
+            {selectedCountry.code}
+          </Text>
+          <ChevronDown size={18} color={isDark ? "#9ca3af" : "#6b7280"} />
+          <Text className="text-gray-400 dark:text-gray-500 ml-2 text-sm">
+            ({selectedCountry.country})
+          </Text>
+        </View>
+      </Pressable>
     </>
+  );
+}
+
+/** Animated bottom sheet — rendered outside the ScrollView */
+export function CountryPickerSheet() {
+  const selectedCountry = useAppStore((s) => s.selectedCountry);
+  const setSelectedCountry = useAppStore((s) => s.setSelectedCountry);
+  const isOpen = useAppStore((s) => s.isCountryPickerOpen);
+  const setOpen = useAppStore((s) => s.setCountryPickerOpen);
+
+  const [countries, setCountries] = useState<PickerCountry[]>([]);
+  const [query, setQuery] = useState("");
+
+  const { height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isDark = useColorScheme() === "dark";
+  const listRef = useRef<FlatList<PickerCountry>>(null);
+  const searchRef = useRef<TextInput>(null);
+
+  const sheetHeight = screenHeight * SHEET_RATIO;
+  const translateY = useRef(new Animated.Value(sheetHeight)).current;
+  const backdrop = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    loadCountries().then(setCountries);
+  }, []);
+
+  // Animate in/out
+  useEffect(() => {
+    if (isOpen) {
+      translateY.setValue(sheetHeight);
+      backdrop.setValue(0);
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(translateY, { toValue: 0, damping: 22, stiffness: 200, mass: 0.8, useNativeDriver: true }),
+          Animated.timing(backdrop, { toValue: 1, duration: 250, useNativeDriver: true }),
+        ]).start();
+        setTimeout(() => searchRef.current?.focus(), 350);
+      });
+    }
+  }, [isOpen]);
+
+  const close = () => {
+    Keyboard.dismiss();
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: sheetHeight, duration: 220, useNativeDriver: true }),
+      Animated.timing(backdrop, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start(() => {
+      setOpen(false);
+      setQuery("");
+    });
+  };
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return countries;
+    const q = query.toLowerCase().trim();
+    return countries.filter((c) => {
+      const name = getCountryName(c).toLowerCase();
+      const code = c.callingCode?.[0] ?? "";
+      return name.includes(q) || code.includes(q) || c.cca2.toLowerCase().includes(q);
+    });
+  }, [countries, query]);
+
+  const select = (country: PickerCountry) => {
+    setSelectedCountry({
+      code: `+${country.callingCode[0]}`,
+      country: country.cca2,
+      flag: country.flag || "",
+    });
+    close();
+  };
+
+  const selectedIndex = useMemo(
+    () => filtered.findIndex((c) => c.cca2 === selectedCountry.country),
+    [filtered, selectedCountry.country],
+  );
+
+  // Colors
+  const bg = isDark ? "#1f2937" : "#ffffff";
+  const surfaceBg = isDark ? "#374151" : "#f3f4f6";
+  const textColor = isDark ? "#f9fafb" : "#111827";
+  const mutedColor = isDark ? "#9ca3af" : "#6b7280";
+  const sep = isDark ? "#374151" : "#f3f4f6";
+  const highlight = isDark ? "#374151" : "#f0fdf4";
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal visible animationType="none" transparent statusBarTranslucent={false} onRequestClose={close}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+
+      {/* Backdrop */}
+      <Animated.View style={[{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }, { opacity: backdrop }]}>
+        <Pressable style={{ flex: 1 }} onPress={close} />
+      </Animated.View>
+
+      {/* Sheet */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            height: sheetHeight + insets.bottom,
+            backgroundColor: bg,
+            borderTopLeftRadius: 20, borderTopRightRadius: 20,
+            paddingBottom: insets.bottom,
+          },
+          { transform: [{ translateY }] },
+        ]}
+      >
+        {/* Drag handle */}
+        <View className="items-center pt-3 pb-1">
+          <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: isDark ? "#4b5563" : "#d1d5db" }} />
+        </View>
+
+        {/* Search */}
+        <View className="px-4 pt-2 pb-3">
+          <View className="flex-row items-center rounded-xl px-3 py-2.5" style={{ backgroundColor: surfaceBg }}>
+            <Search size={18} color={mutedColor} />
+            <TextInput
+              ref={searchRef}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search country"
+              placeholderTextColor={mutedColor}
+              className="flex-1 ml-2 text-base"
+              style={{ color: textColor }}
+              clearButtonMode="while-editing"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
+            />
+          </View>
+        </View>
+
+        <View style={{ height: 1, backgroundColor: sep }} />
+
+        {/* Country list */}
+        <FlatList
+          key={countries.length > 0 ? "loaded" : "loading"}
+          ref={listRef}
+          data={filtered}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          initialNumToRender={15}
+          maxToRenderPerBatch={20}
+          windowSize={5}
+          getItemLayout={(_, i) => ({ length: ROW_HEIGHT, offset: ROW_HEIGHT * i, index: i })}
+          initialScrollIndex={selectedIndex > 0 ? selectedIndex : 0}
+          onScrollToIndexFailed={() => {
+            if (selectedIndex > 0 && selectedIndex < filtered.length) {
+              setTimeout(() => listRef.current?.scrollToIndex({ index: selectedIndex, animated: false }), 100);
+            }
+          }}
+          renderItem={({ item }) => {
+            const active = item.cca2 === selectedCountry.country;
+            return (
+              <Pressable
+                onPress={() => select(item)}
+                style={{ height: ROW_HEIGHT, backgroundColor: active ? highlight : "transparent" }}
+                className="flex-row items-center px-4"
+              >
+                <CountryFlag isoCode={item.cca2} size={22} />
+                <View className="flex-1 ml-3">
+                  <Text className="text-base" style={{ color: textColor }} numberOfLines={1}>
+                    {getCountryName(item)}
+                  </Text>
+                </View>
+                <Text className="text-sm ml-2" style={{ color: mutedColor }}>
+                  +{item.callingCode?.[0]}
+                </Text>
+                {active && <View className="ml-2 w-3 h-3 rounded-full bg-emerald-500" />}
+              </Pressable>
+            );
+          }}
+          ItemSeparatorComponent={() => (
+            <View style={{ height: 1, backgroundColor: sep, marginLeft: 52 }} />
+          )}
+        />
+      </Animated.View>
+    </Modal>
   );
 }

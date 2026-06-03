@@ -5,14 +5,31 @@ import { database } from "../db";
 import { getAllCountries, FlagType } from "react-native-country-picker-modal";
 import type { Country as PickerCountry } from "react-native-country-picker-modal";
 
-// Cache for countries data
+// Cache for countries data — preloaded on import, sorted once by calling code length
 let countriesCache: PickerCountry[] | null = null;
 
-const loadCountries = async (): Promise<PickerCountry[]> => {
+export const loadCountries = async (): Promise<PickerCountry[]> => {
   if (countriesCache) return countriesCache;
-  countriesCache = await getAllCountries(FlagType.EMOJI);
+  const raw = await getAllCountries(FlagType.EMOJI);
+  countriesCache = [...raw].sort((a, b) => {
+    const aCode = a.callingCode?.[0] || "";
+    const bCode = b.callingCode?.[0] || "";
+    return bCode.length - aCode.length;
+  });
   return countriesCache;
 };
+
+// Warm the cache early so country detection in setPhoneNumber is synchronous
+loadCountries();
+
+function detectCountry(cleaned: string): PickerCountry | null {
+  if (!countriesCache) return null;
+  for (const country of countriesCache) {
+    const code = country.callingCode?.[0];
+    if (code && cleaned.startsWith(code)) return country;
+  }
+  return null;
+}
 
 interface Country {
   code: string;
@@ -54,12 +71,12 @@ interface AppStore {
   phoneNumber: string;
   rawPhoneNumber: string;
   selectedCountry: Country;
-  selectedCountryCode?: string;
-  isPressed: boolean;
+  selectedCountryCode: string;
   recentContacts: RecentContactData[];
+  isCountryPickerOpen: boolean;
   setPhoneNumber: (phone: string) => void;
   setSelectedCountry: (country: Country) => void;
-  setIsPressed: (pressed: boolean) => void;
+  setCountryPickerOpen: (open: boolean) => void;
   isValidNumber: () => boolean;
   startChat: () => Promise<void>;
   loadRecentContacts: () => Promise<void>;
@@ -72,63 +89,64 @@ export const useAppStore = create<AppStore>((set, get) => ({
   rawPhoneNumber: "",
   selectedCountry: { code: "+254", country: "KE", flag: "🇰🇪" },
   selectedCountryCode: "+254",
-  isPressed: false,
+  isCountryPickerOpen: false,
   recentContacts: [],
 
   setPhoneNumber: (phone) => {
     const cleaned = phone.replace(/\D/g, "");
+    const looksInternational = phone.startsWith("+") || cleaned.length > 10;
 
-    // Check if phone starts with + or has many digits (likely includes country code)
-    if (phone.startsWith("+") || cleaned.length > 10) {
-      // Try to detect country code asynchronously
-      loadCountries().then((countries) => {
-        // Sort by calling code length (longest first) to match more specific codes first
-        const sorted = [...countries].sort((a, b) => {
-          const aCode = a.callingCode?.[0] || "";
-          const bCode = b.callingCode?.[0] || "";
-          return bCode.length - aCode.length;
+    if (cleaned.length > 0 && looksInternational) {
+      // Try synchronous detection first (cache is preloaded on import)
+      const matched = detectCountry(cleaned);
+      if (matched) {
+        const code = matched.callingCode?.[0] ?? "";
+        const phoneWithoutCode = cleaned.substring(code.length);
+        const formatted = formatPhoneNumber(phoneWithoutCode);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        set({
+          selectedCountry: { code: `+${code}`, country: matched.cca2, flag: matched.flag || "" },
+          selectedCountryCode: `+${code}`,
+          phoneNumber: formatted,
+          rawPhoneNumber: phoneWithoutCode,
         });
+        return;
+      }
 
-        for (const country of sorted) {
-          const callingCode = country.callingCode?.[0];
-          if (callingCode && cleaned.startsWith(callingCode)) {
-            // Found matching country code
-            const phoneWithoutCode = cleaned.substring(callingCode.length);
-            const formatted = formatPhoneNumber(phoneWithoutCode);
+      // Cache miss — fall back to async, but still show the number immediately
+      const formatted = formatPhoneNumber(cleaned);
+      set({ phoneNumber: formatted, rawPhoneNumber: cleaned });
 
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            set({
-              selectedCountry: {
-                code: `+${callingCode}`,
-                country: country.cca2,
-                flag: country.flag || "",
-              },
-              selectedCountryCode: `+${callingCode}`,
-              phoneNumber: formatted,
-              rawPhoneNumber: phoneWithoutCode,
-            });
-            return;
-          }
+      loadCountries().then(() => {
+        const currentRaw = get().rawPhoneNumber;
+        if (currentRaw !== cleaned) return;
+        const retry = detectCountry(cleaned);
+        if (retry) {
+          const code = retry.callingCode?.[0] ?? "";
+          const phoneWithoutCode = cleaned.substring(code.length);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          set({
+            selectedCountry: { code: `+${code}`, country: retry.cca2, flag: retry.flag || "" },
+            selectedCountryCode: `+${code}`,
+            phoneNumber: formatPhoneNumber(phoneWithoutCode),
+            rawPhoneNumber: phoneWithoutCode,
+          });
         }
-
-        // No country code detected, just format the number
-        const formatted = formatPhoneNumber(cleaned);
-        set({ phoneNumber: formatted, rawPhoneNumber: cleaned });
       });
       return;
     }
 
-    // No country code detected, just format the number
+    // Plain local number — no country code detection needed
     const formatted = formatPhoneNumber(cleaned);
     set({ phoneNumber: formatted, rawPhoneNumber: cleaned });
   },
+
+  setCountryPickerOpen: (open) => set({ isCountryPickerOpen: open }),
 
   setSelectedCountry: (country) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     set({ selectedCountry: country, selectedCountryCode: country.code });
   },
-
-  setIsPressed: (pressed) => set({ isPressed: pressed }),
 
   isValidNumber: () => get().rawPhoneNumber.trim().length >= 9,
 

@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { useAppStore } from "../store/useAppStore";
+import { Phone } from "lucide-react-native";
 
 interface StartChatButtonProps {
   onPress: () => void;
@@ -7,23 +7,18 @@ interface StartChatButtonProps {
 }
 
 export default function StartChatButton({ onPress, isValid }: StartChatButtonProps) {
-  const { isPressed, setIsPressed } = useAppStore((state) => state);
-
   return (
-    <>
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        disabled={!isValid}
-        className={`rounded-2xl py-4 items-center justify-center shadow-lg ${isValid ? (isPressed ? "bg-emerald-600" : "bg-emerald-500") : "bg-gray-300 dark:bg-gray-600"}`}
-      >
-        <View className="flex-row items-center">
-          <Text className="text-2xl mr-2">📱</Text>
-          <Text className={`text-lg font-bold ${isValid ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>Start WhatsApp Chat</Text>
-        </View>
-      </Pressable>
-      <Text className="text-center text-gray-400 dark:text-gray-500 text-sm mt-4">Opens WhatsApp directly — no contact saving needed</Text>
-    </>
+    <Pressable
+      onPress={onPress}
+      disabled={!isValid}
+      className={`rounded-xl py-4 items-center justify-center ${isValid ? "bg-emerald-500 active:bg-emerald-600" : "bg-gray-200 dark:bg-gray-700"}`}
+    >
+      <View className="flex-row items-center">
+        <Phone size={20} color={isValid ? "#fff" : "#9ca3af"} strokeWidth={2.5} />
+        <Text className={`text-lg font-semibold ml-2 ${isValid ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
+          Open in WhatsApp
+        </Text>
+      </View>
+    </Pressable>
   );
 }
