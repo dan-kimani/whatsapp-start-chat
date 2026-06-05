@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "WhatsApp Quick Chat",
+    "name": "WhatsApp Link",
     "slug": "whatsapp-start-chat",
     "version": "0.0.1",
     "scheme": "acme",
@@ -18,7 +18,7 @@
       },
       "package": "com.whatsappstartchat",
       "versionCode": 1,
-      "permissions": []
+      "permissions": ["READ_CONTACTS", "WRITE_CONTACTS"]
     },
     "extra": {
       "eas": {
@@ -28,7 +28,13 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow WhatsApp Link to read your contacts to show names for recent numbers."
+        }
+      ]
     ]
   }
 }

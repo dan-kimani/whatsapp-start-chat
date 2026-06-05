@@ -1,4 +1,4 @@
-# WhatsApp Quick Chat 💬
+# WhatsApp Link 💬
 
 A fast, lightweight React Native app to start WhatsApp chats without saving the phone number to your contacts first. Built with **Expo**, **NativeWind (Uniwind)**, and **SQLite**.
 
