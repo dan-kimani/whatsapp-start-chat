@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Keyboard, Pressable, View } from "react-native";
+import * as Notifications from "expo-notifications";
 
 import AppHeader from "../components/AppHeader";
 import { CountrySelector, CountryPickerSheet } from "../components/CountrySelector";
@@ -14,6 +15,7 @@ export default function App() {
 
   useEffect(() => {
     requestContactsPermission();
+    Notifications.requestPermissionsAsync();
   }, []);
 
   return (

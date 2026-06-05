@@ -15,8 +15,12 @@ export async function saveContact(phoneNumber: string, countryCode: string, coun
   }
 }
 
-export function getRecentContacts(limit = 5) {
-  return db.select().from(recentContacts).orderBy(desc(recentContacts.usedAt)).limit(limit).all();
+export function getRecentContacts(limit = 20, offset = 0) {
+  return db.select().from(recentContacts).orderBy(desc(recentContacts.usedAt)).limit(limit).offset(offset).all();
+}
+
+export function getRecentContactsCount() {
+  return db.select({ c: count() }).from(recentContacts).get()?.c ?? 0;
 }
 
 export function deleteContact(phoneNumber: string) {

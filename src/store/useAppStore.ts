@@ -112,6 +112,7 @@ interface AppStore {
   selectRecentContact: (contact: RecentContactData) => void;
   deleteRecentContact: (phoneNumber: string) => Promise<void>;
   clearAllRecentContacts: () => Promise<void>;
+  loadMoreRecentContacts: () => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -291,7 +292,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   loadRecentContacts: async () => {
     try {
-      const contacts = await db.getRecentContacts(5);
+      const contacts = db.getRecentContacts(20, 0);
 
       const recentContactsData: RecentContactData[] = contacts.map((contact) => {
         let country = contact.country;
@@ -332,7 +333,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
         }
       } catch (err) {
-        // Permission denied or error — leave names empty
         console.error("Failed to load contacts from device:", err);
       }
 
@@ -341,6 +341,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
       console.error("Failed to load recent contacts:", error);
       set({ recentContacts: [], contactNames: {} });
     }
+  },
+
+  loadMoreRecentContacts: () => {
+    const current = get().recentContacts;
+    const contacts = db.getRecentContacts(20, current.length);
+    if (contacts.length === 0) return;
+
+    const newContacts: RecentContactData[] = contacts.map((contact) => {
+      let country = contact.country;
+      let flag = contact.flag;
+      if (!country || !flag) {
+        const found = findCountryByCallingCode(contact.countryCode);
+        if (found) {
+          country = country || found.cca2;
+          flag = flag || found.flag || "";
+        }
+      }
+      return {
+        phoneNumber: contact.phoneNumber,
+        countryCode: contact.countryCode,
+        country,
+        flag,
+        usedAt: new Date(contact.usedAt),
+      };
+    });
+
+    set({ recentContacts: [...current, ...newContacts] });
   },
 
   selectRecentContact: (contact) => {

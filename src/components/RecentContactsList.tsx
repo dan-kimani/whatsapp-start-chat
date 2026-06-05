@@ -29,6 +29,7 @@ export default function RecentContactsList() {
   const clearAllRecentContacts = useAppStore((state) => state.clearAllRecentContacts);
   const contactNames = useAppStore((state) => state.contactNames);
   const loadRecentContacts = useAppStore((state) => state.loadRecentContacts);
+  const loadMoreRecentContacts = useAppStore((state) => state.loadMoreRecentContacts);
   const [refreshing, setRefreshing] = useState(false);
   const [reminderTarget, setReminderTarget] = useState<{
     phoneNumber: string;
@@ -54,6 +55,8 @@ export default function RecentContactsList() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         keyExtractor={(item) => item.phoneNumber}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        onEndReached={loadMoreRecentContacts}
+        onEndReachedThreshold={0.3}
         ListHeaderComponent={
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-sm font-bold text-gray-500 dark:text-gray-400">Recent</Text>
