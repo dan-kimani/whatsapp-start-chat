@@ -1,96 +1,137 @@
-import * as SQLite from "expo-sqlite";
+import { eq, desc, and, asc, count, sql } from "drizzle-orm";
+import { db } from "./client";
+import { recentContacts, broadcasts, broadcastContacts, messageTemplates, reminders } from "./schema";
 
-interface RecentContact {
-  id: number;
-  phone_number: string;
-  country_code: string;
-  country: string;
-  flag: string;
-  used_at: number;
-}
+// -- Recent Contacts --
 
-class Database {
-  private db: SQLite.SQLiteDatabase | null = null;
+export async function saveContact(phoneNumber: string, countryCode: string, country: string, flag: string) {
+  const usedAt = Date.now();
+  const existing = db.select().from(recentContacts).where(eq(recentContacts.phoneNumber, phoneNumber)).get();
 
-  async init() {
-    if (this.db) return;
-
-    this.db = await SQLite.openDatabaseAsync("whatsapp_quick_chat.db");
-
-    await this.db.execAsync(`
-      CREATE TABLE IF NOT EXISTS recent_contacts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        phone_number TEXT NOT NULL,
-        country_code TEXT NOT NULL,
-        country TEXT NOT NULL,
-        flag TEXT NOT NULL,
-        used_at INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_phone_number ON recent_contacts(phone_number);
-      CREATE INDEX IF NOT EXISTS idx_used_at ON recent_contacts(used_at DESC);
-    `);
-  }
-
-  async saveContact(
-    phoneNumber: string,
-    countryCode: string,
-    country: string,
-    flag: string
-  ): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    const usedAt = Date.now();
-
-    // Check if contact exists
-    const existing = await this.db.getFirstAsync<RecentContact>(
-      "SELECT * FROM recent_contacts WHERE phone_number = ?",
-      [phoneNumber]
-    );
-
-    if (existing) {
-      // Update existing contact
-      await this.db.runAsync(
-        "UPDATE recent_contacts SET used_at = ?, country_code = ?, country = ?, flag = ? WHERE phone_number = ?",
-        [usedAt, countryCode, country, flag, phoneNumber]
-      );
-    } else {
-      // Insert new contact
-      await this.db.runAsync(
-        "INSERT INTO recent_contacts (phone_number, country_code, country, flag, used_at) VALUES (?, ?, ?, ?, ?)",
-        [phoneNumber, countryCode, country, flag, usedAt]
-      );
-    }
-  }
-
-  async getRecentContacts(limit: number = 5): Promise<RecentContact[]> {
-    await this.init();
-    if (!this.db) return [];
-
-    const contacts = await this.db.getAllAsync<RecentContact>(
-      "SELECT * FROM recent_contacts ORDER BY used_at DESC LIMIT ?",
-      [limit]
-    );
-
-    return contacts;
-  }
-
-  async deleteContact(phoneNumber: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    await this.db.runAsync("DELETE FROM recent_contacts WHERE phone_number = ?", [
-      phoneNumber,
-    ]);
-  }
-
-  async clearAll(): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    await this.db.runAsync("DELETE FROM recent_contacts");
+  if (existing) {
+    db.update(recentContacts).set({ usedAt, countryCode, country, flag }).where(eq(recentContacts.id, existing.id)).run();
+  } else {
+    db.insert(recentContacts).values({ phoneNumber, countryCode, country, flag, usedAt }).run();
   }
 }
 
-export const database = new Database();
-export type { RecentContact };
+export function getRecentContacts(limit = 5) {
+  return db.select().from(recentContacts).orderBy(desc(recentContacts.usedAt)).limit(limit).all();
+}
+
+export function deleteContact(phoneNumber: string) {
+  db.delete(recentContacts).where(eq(recentContacts.phoneNumber, phoneNumber)).run();
+}
+
+export function clearAllRecent() {
+  db.delete(recentContacts).run();
+}
+
+// -- Broadcasts --
+
+export function createBroadcast(message: string) {
+  const r = db.insert(broadcasts).values({ message, createdAt: Date.now() }).run();
+  return r.lastInsertRowId;
+}
+
+export function getBroadcasts() {
+  return db.select().from(broadcasts).orderBy(desc(broadcasts.createdAt)).all();
+}
+
+export function getBroadcast(id: number) {
+  return db.select().from(broadcasts).where(eq(broadcasts.id, id)).get();
+}
+
+export function deleteBroadcast(id: number) {
+  db.delete(broadcastContacts).where(eq(broadcastContacts.broadcastId, id)).run();
+  db.delete(broadcasts).where(eq(broadcasts.id, id)).run();
+}
+
+export function updateBroadcastMessage(id: number, message: string) {
+  db.update(broadcasts).set({ message }).where(eq(broadcasts.id, id)).run();
+}
+
+export function getBroadcastContacts(broadcastId: number) {
+  return db.select().from(broadcastContacts).where(eq(broadcastContacts.broadcastId, broadcastId)).orderBy(asc(broadcastContacts.id)).all();
+}
+
+export function addBroadcastContact(broadcastId: number, phoneNumber: string, countryCode: string) {
+  db.insert(broadcastContacts).values({ broadcastId, phoneNumber, countryCode }).run();
+}
+
+export function removeBroadcastContact(contactId: number) {
+  db.delete(broadcastContacts).where(eq(broadcastContacts.id, contactId)).run();
+}
+
+export function markBroadcastContactSent(contactId: number) {
+  db.update(broadcastContacts).set({ sent: 1 }).where(eq(broadcastContacts.id, contactId)).run();
+}
+
+export function getBroadcastProgress(broadcastId: number) {
+  const total = db.select({ c: count() }).from(broadcastContacts).where(eq(broadcastContacts.broadcastId, broadcastId)).get()?.c ?? 0;
+  const sent =
+    db
+      .select({ c: count() })
+      .from(broadcastContacts)
+      .where(and(eq(broadcastContacts.broadcastId, broadcastId), eq(broadcastContacts.sent, 1)))
+      .get()?.c ?? 0;
+  return { total, sent };
+}
+
+// -- Message Templates --
+
+export function getTemplates() {
+  return db.select({ id: messageTemplates.id, text: messageTemplates.text }).from(messageTemplates).orderBy(asc(messageTemplates.sortOrder)).all();
+}
+
+export function addTemplate(text: string) {
+  db.insert(messageTemplates)
+    .values({ text, sortOrder: sql`(SELECT COALESCE(MAX(sort_order), 0) + 1 FROM message_templates)` })
+    .run();
+}
+
+export function deleteTemplate(id: number) {
+  db.delete(messageTemplates).where(eq(messageTemplates.id, id)).run();
+}
+
+// -- Reminders --
+
+export function createReminder(phoneNumber: string, countryCode: string, message: string, scheduledAt: number) {
+  const r = db.insert(reminders).values({ phoneNumber, countryCode, message, scheduledAt, createdAt: Date.now() }).run();
+  return r.lastInsertRowId;
+}
+
+export function updateReminderNotification(reminderId: number, notificationId: string) {
+  db.update(reminders).set({ notificationId }).where(eq(reminders.id, reminderId)).run();
+}
+
+export function completeReminder(reminderId: number) {
+  db.update(reminders).set({ completed: 1 }).where(eq(reminders.id, reminderId)).run();
+}
+
+export function getAllReminders() {
+  return db.select().from(reminders).orderBy(asc(reminders.scheduledAt)).all();
+}
+
+export function updateReminder(id: number, updates: { message?: string; scheduledAt?: number; completed?: number }) {
+  db.update(reminders).set(updates).where(eq(reminders.id, id)).run();
+}
+
+export function deleteReminderById(id: number) {
+  db.delete(reminders).where(eq(reminders.id, id)).run();
+}
+
+export function getPendingReminders() {
+  return db
+    .select({
+      id: reminders.id,
+      phoneNumber: reminders.phoneNumber,
+      countryCode: reminders.countryCode,
+      message: reminders.message,
+      scheduledAt: reminders.scheduledAt,
+    })
+    .from(reminders)
+    .where(and(eq(reminders.completed, 0), sql`${reminders.scheduledAt} <= ${Date.now()}`))
+    .orderBy(asc(reminders.scheduledAt))
+    .all();
+}
