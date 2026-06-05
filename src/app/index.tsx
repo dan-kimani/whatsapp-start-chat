@@ -1,5 +1,5 @@
-import { StatusBar } from "expo-status-bar";
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
+import { useEffect } from "react";
+import { Keyboard, Pressable, View } from "react-native";
 
 import AppHeader from "../components/AppHeader";
 import { CountrySelector, CountryPickerSheet } from "../components/CountrySelector";
@@ -10,32 +10,27 @@ import { useAppStore } from "../store/useAppStore";
 
 export default function App() {
   const isValidNumber = useAppStore((state) => state.isValidNumber());
+  const requestContactsPermission = useAppStore((state) => state.requestContactsPermission);
+
+  useEffect(() => {
+    requestContactsPermission();
+  }, []);
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-      <StatusBar style="auto" />
-      <Pressable onPress={Keyboard.dismiss} className="flex-1">
-        <ScrollView
-          className="flex-1 bg-white dark:bg-gray-950"
-          contentContainerStyle={{ paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <AppHeader />
+    <Pressable onPress={Keyboard.dismiss} className="flex-1">
+      <AppHeader />
 
-          <View className="px-5">
-            <View className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 mb-4">
-              <CountrySelector />
-              <PhoneInput />
-              <StartChatButton isValid={isValidNumber} />
-            </View>
+      <View className="px-5">
+        <View className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-5 mb-4">
+          <CountrySelector />
+          <PhoneInput />
+          <StartChatButton isValid={isValidNumber} />
+        </View>
+      </View>
 
-            <RecentContactsList />
-          </View>
-        </ScrollView>
-      </Pressable>
+      <RecentContactsList />
 
-      {/* Rendered outside ScrollView so FlatList isn't nested */}
       <CountryPickerSheet />
-    </KeyboardAvoidingView>
+    </Pressable>
   );
 }
