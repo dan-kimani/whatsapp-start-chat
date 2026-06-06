@@ -1,0 +1,28 @@
+{
+  "semi": true,
+  "singleQuote": false,
+  "jsxSingleQuote": false,
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "insertFinalNewline": true,
+  "sortTailwindcss": {
+    "stylesheet": "./src/global.css"
+  },
+  "sortImports": {
+    "groups": [
+      "side_effect",
+      "builtin",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "unknown"
+    ],
+    "internalPattern": ["@/", "~/"]
+  },
+  "ignorePatterns": ["node_modules", ".expo", "dist", "web-build", "build", "assets", "app-example"]
+}

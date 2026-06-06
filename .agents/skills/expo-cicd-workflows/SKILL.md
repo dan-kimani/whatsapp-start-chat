@@ -16,7 +16,7 @@ Fetch these resources before generating or validating workflow files. Use the fe
 
 ```bash
 # Fetch resources
-node {baseDir}/scripts/fetch.js <url>
+bun {baseDir}/scripts/fetch.js <url>
 ```
 
 1. **JSON Schema** — https://api.expo.dev/v2/workflows/schema
@@ -80,9 +80,9 @@ After generating or editing a workflow file, validate it against the schema:
 
 ```sh
 # Install dependencies if missing
-[ -d "{baseDir}/scripts/node_modules" ] || npm install --prefix {baseDir}/scripts
+[ -d "{baseDir}/scripts/node_modules" ] || bun install --cwd {baseDir}/scripts
 
-node {baseDir}/scripts/validate.js <workflow.yml> [workflow2.yml ...]
+bun {baseDir}/scripts/validate.js <workflow.yml> [workflow2.yml ...]
 ```
 
 The validator fetches the latest schema and checks the YAML structure. Fix any reported errors before considering the workflow complete.

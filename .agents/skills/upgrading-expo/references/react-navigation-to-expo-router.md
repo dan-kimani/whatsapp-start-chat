@@ -15,11 +15,11 @@ In SDK 56+, application code must not import from `@react-navigation/*` directly
 Run from the project root over your application code (replace `src` with the actual directory or glob):
 
 ```sh
-npx expo-codemod sdk-56-expo-router-react-navigation-replace src
+bunx expo-codemod sdk-56-expo-router-react-navigation-replace src
 ```
 
 ```sh
-npx expo-codemod sdk-56-expo-router-react-navigation-replace '**/*.{ts,tsx,js,jsx}'
+bunx expo-codemod sdk-56-expo-router-react-navigation-replace '**/*.{ts,tsx,js,jsx}'
 ```
 
 ## Manual API mapping

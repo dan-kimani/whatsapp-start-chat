@@ -18,10 +18,7 @@
       },
       "package": "com.whatsappstartchat",
       "versionCode": 1,
-      "permissions": [
-        "READ_CONTACTS",
-        "WRITE_CONTACTS"
-      ]
+      "permissions": ["READ_CONTACTS", "WRITE_CONTACTS"]
     },
     "extra": {
       "eas": {
@@ -37,8 +34,7 @@
         {
           "contactsPermission": "Allow WhatsApp Link to read your contacts to show names for recent numbers."
         }
-      ],
-      "@react-native-community/datetimepicker"
+      ]
     ]
   }
 }

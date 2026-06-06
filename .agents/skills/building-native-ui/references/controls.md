@@ -32,7 +32,7 @@ const [enabled, setEnabled] = useState(false);
 Use for non-navigational tabs or mode selection. Avoid changing default colors.
 
 ```tsx
-import SegmentedControl from "@react-native-segmented-control/segmented-control";
+import { SegmentedControl } from "@expo/ui/community/segmented-control";
 import { useState } from "react";
 
 const [index, setIndex] = useState(0);
@@ -68,17 +68,12 @@ const [index, setIndex] = useState(0);
 Continuous value selection.
 
 ```tsx
-import Slider from "@react-native-community/slider";
+import Slider from "@expo/ui/community/slider";
 import { useState } from "react";
 
 const [value, setValue] = useState(0.5);
 
-<Slider
-  value={value}
-  onValueChange={setValue}
-  minimumValue={0}
-  maximumValue={1}
-/>;
+<Slider value={value} onValueChange={setValue} minimumValue={0} maximumValue={1} />;
 ```
 
 ### Customization
@@ -99,13 +94,7 @@ const [value, setValue] = useState(0.5);
 ### Discrete Steps
 
 ```tsx
-<Slider
-  value={value}
-  onValueChange={setValue}
-  minimumValue={0}
-  maximumValue={10}
-  step={1}
-/>
+<Slider value={value} onValueChange={setValue} minimumValue={0} maximumValue={10} step={1} />
 ```
 
 ## Date/Time Picker
@@ -113,7 +102,7 @@ const [value, setValue] = useState(0.5);
 Compact pickers with popovers. Has built-in haptics.
 
 ```tsx
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker from "@expo/ui/community/datetime-picker";
 import { useState } from "react";
 
 const [date, setDate] = useState(new Date());
@@ -154,11 +143,7 @@ const [date, setDate] = useState(new Date());
 ### Time Intervals
 
 ```tsx
-<DateTimePicker
-  value={date}
-  mode="time"
-  minuteInterval={15}
-/>
+<DateTimePicker value={date} mode="time" minuteInterval={15} />
 ```
 
 ### Min/Max Dates
@@ -177,17 +162,12 @@ const [date, setDate] = useState(new Date());
 Increment/decrement numeric values.
 
 ```tsx
-import { Stepper } from "react-native";
+import { Stepper } from "@expo/ui";
 import { useState } from "react";
 
 const [count, setCount] = useState(0);
 
-<Stepper
-  value={count}
-  onValueChange={setCount}
-  minimumValue={0}
-  maximumValue={10}
-/>;
+<Stepper value={count} onValueChange={setCount} minimumValue={0} maximumValue={10} />;
 ```
 
 ## TextInput
@@ -206,7 +186,7 @@ import { TextInput } from "react-native";
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
   }}
-/>
+/>;
 ```
 
 ### Keyboard Types
@@ -234,12 +214,7 @@ import { TextInput } from "react-native";
 ### Multiline
 
 ```tsx
-<TextInput
-  multiline
-  numberOfLines={4}
-  textAlignVertical="top"
-  style={{ minHeight: 100 }}
-/>
+<TextInput multiline numberOfLines={4} textAlignVertical="top" style={{ minHeight: 100 }} />
 ```
 
 ## Picker (Wheel)
@@ -247,7 +222,7 @@ import { TextInput } from "react-native";
 For selection from many options (5+ items).
 
 ```tsx
-import { Picker } from "@react-native-picker/picker";
+import { Picker } from "@expo/ui/community/picker";
 import { useState } from "react";
 
 const [selected, setSelected] = useState("js");

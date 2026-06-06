@@ -15,7 +15,7 @@ Consult these resources as needed:
 references/
   animations.md          Reanimated: entering, exiting, layout, scroll-driven, gestures
   controls.md            Native iOS: Switch, Slider, SegmentedControl, DateTimePicker, Picker
-  form-sheet.md          Form sheets in expo-router: configuration, footers and background interaction. 
+  form-sheet.md          Form sheets in expo-router: configuration, footers and background interaction.
   gradients.md           CSS gradients via experimental_backgroundImage (New Arch only)
   icons.md               SF Symbols via expo-image (sf: source), names, animations, weights
   media.md               Camera, audio, video, and file saving
@@ -33,15 +33,15 @@ references/
 
 **CRITICAL: Always try Expo Go first before creating custom builds.**
 
-Most Expo apps work in Expo Go without any custom native code. Before running `npx expo run:ios` or `npx expo run:android`:
+Most Expo apps work in Expo Go without any custom native code. Before running `bunx expo run:ios` or `bunx expo run:android`:
 
-1. **Start with Expo Go**: Run `npx expo start` and scan the QR code with Expo Go
+1. **Start with Expo Go**: Run `bunx expo start` and scan the QR code with Expo Go
 2. **Check if features work**: Test your app thoroughly in Expo Go
 3. **Only create custom builds when required** - see below
 
 ### When Custom Builds Are Required
 
-You need `npx expo run:ios/android` or `eas build` ONLY when using:
+You need `bunx expo run:ios/android` or `eas build` ONLY when using:
 
 - **Local Expo modules** (custom native code in `modules/`)
 - **Apple targets** (widgets, app clips, extensions via `@bacons/apple-targets`)
@@ -100,7 +100,7 @@ See `./references/route-structure.md` for detailed route conventions.
 ## Behavior
 
 - Use expo-haptics conditionally on iOS to make more delightful experiences
-- Use views with built-in haptics like `<Switch />` from React Native and `@react-native-community/datetimepicker`
+- Use views with built-in haptics like `<Switch />` from React Native and `@expo/ui/community/datetime-picker`
 - When a route belongs to a Stack, its first child should almost always be a ScrollView with `contentInsetAdjustmentBehavior="automatic"` set
 - When adding a `ScrollView` to the page it should almost always be the first component inside the route component
 - Prefer `headerSearchBarOptions` in Stack.Screen options to add a search bar
@@ -187,25 +187,11 @@ import { Link } from "expo-router";
     </Pressable>
   </Link.Trigger>
   <Link.Menu>
-    <Link.MenuAction
-      title="Share"
-      icon="square.and.arrow.up"
-      onPress={handleSharePress}
-    />
-    <Link.MenuAction
-      title="Block"
-      icon="nosign"
-      destructive
-      onPress={handleBlockPress}
-    />
+    <Link.MenuAction title="Share" icon="square.and.arrow.up" onPress={handleSharePress} />
+    <Link.MenuAction title="Block" icon="nosign" destructive onPress={handleBlockPress} />
     <Link.Menu title="More" icon="ellipsis">
       <Link.MenuAction title="Copy" icon="doc.on.doc" onPress={() => {}} />
-      <Link.MenuAction
-        title="Delete"
-        icon="trash"
-        destructive
-        onPress={() => {}}
-      />
+      <Link.MenuAction title="Delete" icon="trash" destructive onPress={() => {}} />
     </Link.Menu>
   </Link.Menu>
 </Link>;

@@ -19,10 +19,10 @@
 ## Installation
 
 ```bash
-npm install react-native-wgpu@^0.4.1 three@0.172.0 @react-three/fiber@^9.4.0 wgpu-matrix@^3.0.2 @types/three@0.172.0 --legacy-peer-deps
+bun install react-native-wgpu@^0.4.1 three@0.172.0 @react-three/fiber@^9.4.0 wgpu-matrix@^3.0.2 @types/three@0.172.0
 ```
 
-**Note:** `--legacy-peer-deps` may be required due to peer dependency conflicts with canary Expo versions.
+**Note:** Peer dependency conflicts may occur with canary Expo versions.
 
 ## Metro Configuration
 
@@ -48,7 +48,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
         mainFields: ["module"],
       },
       moduleName,
-      platform
+      platform,
     );
   }
   return context.resolveRequest(context, moduleName, platform);
@@ -104,7 +104,7 @@ export class ReactNativeCanvas {
 
 export const makeWebGPURenderer = (
   context: GPUCanvasContext,
-  { antialias = true }: { antialias?: boolean } = {}
+  { antialias = true }: { antialias?: boolean } = {},
 ) =>
   new THREE.WebGPURenderer({
     antialias,
@@ -120,20 +120,12 @@ export const makeWebGPURenderer = (
 import * as THREE from "three/webgpu";
 import React, { useEffect, useRef } from "react";
 import type { ReconcilerRoot, RootState } from "@react-three/fiber";
-import {
-  extend,
-  createRoot,
-  unmountComponentAtNode,
-  events,
-} from "@react-three/fiber";
+import { extend, createRoot, unmountComponentAtNode, events } from "@react-three/fiber";
 import type { ViewProps } from "react-native";
 import { PixelRatio } from "react-native";
 import { Canvas, type CanvasRef } from "react-native-wgpu";
 
-import {
-  makeWebGPURenderer,
-  ReactNativeCanvas,
-} from "@/lib/make-webgpu-renderer";
+import { makeWebGPURenderer, ReactNativeCanvas } from "@/lib/make-webgpu-renderer";
 
 // Extend THREE namespace for R3F - add all components you use
 extend({
@@ -165,12 +157,7 @@ interface FiberCanvasProps {
   scene?: THREE.Scene;
 }
 
-export const FiberCanvas = ({
-  children,
-  style,
-  scene,
-  camera,
-}: FiberCanvasProps) => {
+export const FiberCanvas = ({ children, style, scene, camera }: FiberCanvasProps) => {
   const root = useRef<ReconcilerRoot<OffscreenCanvas>>(null!);
   const canvasRef = useRef<CanvasRef>(null);
 
@@ -401,10 +388,7 @@ function Particles({ count = 500 }) {
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions.current, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions.current, 3]} />
       </bufferGeometry>
       <pointsMaterial color="#ffffff" size={0.2} sizeAttenuation />
     </points>
@@ -484,12 +468,12 @@ await state.gl.init();
 
 ### 5. Peer Dependency Errors
 
-**Problem:** npm install fails with ERESOLVE
+**Problem:** bun install fails
 
 **Solution:** Use `--legacy-peer-deps`:
 
 ```bash
-npm install <packages> --legacy-peer-deps
+bun install <packages>
 ```
 
 ## Building
@@ -497,8 +481,8 @@ npm install <packages> --legacy-peer-deps
 WebGPU requires a custom build:
 
 ```bash
-npx expo prebuild
-npx expo run:ios
+bunx expo prebuild
+bunx expo run:ios
 ```
 
 **Note:** WebGPU does NOT work in Expo Go.

@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "error",
+    "no-ternary": "off",
+    "no-null": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/no-null": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-max-depth": "off",
+    "react/style-prop-object": "warn",
+    "sort-imports": "warn",
+    "sort-keys": "off",
+    "func-names": "off",
+    "func-style": "off",
+    "id-length": "off",
+    "init-declarations": "off",
+    "no-magic-numbers": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "19.2.3"
+    }
+  },
+  "env": {
+    "builtin": true,
+    "node": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    "node_modules",
+    ".expo",
+    "dist",
+    "web-build",
+    "build",
+    "assets",
+    "app-example",
+    ".agents",
+    "babel.config.js",
+    "metro.config.js",
+    "drizzle.config.ts"
+  ]
+}
