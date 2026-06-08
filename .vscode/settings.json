@@ -1,0 +1,39 @@
+{
+  // ── OXC: Default formatter + lint on save ─────────────────────
+  // Format (oxfmt) runs first, then lint fixes (oxlint).
+  // oxfmt handles import sorting via .oxfmtrc.json "sortImports".
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": false,
+  "editor.formatOnSaveMode": "file",
+  "editor.codeActionsOnSave": {
+    "source.format.oxc": "always",
+    "source.fixAll.oxc": "always"
+  },
+
+  // ── Per-language formatter ────────────────────────────────────
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+
+  // ── Linter: run as you type ───────────────────────────────────
+  "oxc.lint.run": "onType",
+
+  // Ensure VSCode's built-in organize-imports doesn't interfere
+  // (import sorting is handled by oxfmt)
+  "typescript.preferences.organizeImportsOnSave": false
+}

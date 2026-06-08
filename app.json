@@ -18,11 +18,17 @@
       },
       "package": "com.atomiciq.com",
       "versionCode": 1,
-      "permissions": ["READ_CONTACTS", "WRITE_CONTACTS"]
+      "permissions": [
+        "READ_CONTACTS",
+        "WRITE_CONTACTS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
+      ]
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "3c82c227-7f98-4ed0-b40f-b41c19b9f336"
+        "projectId": "9cdcb651-7454-4daa-a465-de5c3941483b"
       }
     },
     "plugins": [
