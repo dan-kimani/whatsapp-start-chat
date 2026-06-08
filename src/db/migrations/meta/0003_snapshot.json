@@ -47,9 +47,7 @@
       "indexes": {
         "idx_broadcast_id": {
           "name": "idx_broadcast_id",
-          "columns": [
-            "broadcast_id"
-          ],
+          "columns": ["broadcast_id"],
           "isUnique": false
         }
       },
@@ -58,12 +56,8 @@
           "name": "broadcast_contacts_broadcast_id_broadcasts_id_fk",
           "tableFrom": "broadcast_contacts",
           "tableTo": "broadcasts",
-          "columnsFrom": [
-            "broadcast_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["broadcast_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -185,16 +179,12 @@
       "indexes": {
         "idx_phone_number": {
           "name": "idx_phone_number",
-          "columns": [
-            "phone_number"
-          ],
+          "columns": ["phone_number"],
           "isUnique": false
         },
         "idx_used_at": {
           "name": "idx_used_at",
-          "columns": [
-            "used_at"
-          ],
+          "columns": ["used_at"],
           "isUnique": false
         }
       },

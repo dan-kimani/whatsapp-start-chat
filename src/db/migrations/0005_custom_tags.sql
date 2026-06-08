@@ -1,0 +1,1 @@
+CREATE TABLE `custom_tags` (`name` text PRIMARY KEY NOT NULL);

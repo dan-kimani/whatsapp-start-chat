@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, index } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const recentContacts = sqliteTable(
   "recent_contacts",
@@ -9,6 +9,8 @@ export const recentContacts = sqliteTable(
     country: text("country").notNull(),
     flag: text("flag").notNull(),
     usedAt: integer("used_at").notNull(),
+    notes: text("notes"),
+    tags: text("tags"),
   },
   (table) => [
     index("idx_phone_number").on(table.phoneNumber),
@@ -54,4 +56,8 @@ export const reminders = sqliteTable("reminders", {
   myDay: integer("my_day").notNull().default(0),
   tags: text("tags"),
   createdAt: integer("created_at").notNull(),
+});
+
+export const customTags = sqliteTable("custom_tags", {
+  name: text("name").primaryKey(),
 });

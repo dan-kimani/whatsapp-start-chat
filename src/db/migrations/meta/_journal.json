@@ -22,6 +22,27 @@
       "when": 1780759731503,
       "tag": "0002_myday_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781193600000,
+      "tag": "0003_add_contact_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781193600000,
+      "tag": "0004_add_contact_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781193600000,
+      "tag": "0005_custom_tags",
+      "breakpoints": true
     }
   ]
 }

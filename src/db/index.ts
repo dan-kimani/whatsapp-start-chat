@@ -1,11 +1,12 @@
-import { eq, desc, and, asc, count, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "./client";
 import {
-  recentContacts,
-  broadcasts,
   broadcastContacts,
+  broadcasts,
+  customTags,
   messageTemplates,
+  recentContacts,
   reminders,
 } from "./schema";
 
@@ -48,12 +49,36 @@ export function getRecentContactsCount() {
   return db.select({ c: count() }).from(recentContacts).get()?.c ?? 0;
 }
 
+export function updateContactNote(phoneNumber: string, note: string | null) {
+  db.update(recentContacts)
+    .set({ notes: note })
+    .where(eq(recentContacts.phoneNumber, phoneNumber))
+    .run();
+}
+
+export function updateContactTags(phoneNumber: string, tags: string | null) {
+  db.update(recentContacts).set({ tags }).where(eq(recentContacts.phoneNumber, phoneNumber)).run();
+}
+
 export function deleteContact(phoneNumber: string) {
   db.delete(recentContacts).where(eq(recentContacts.phoneNumber, phoneNumber)).run();
 }
 
 export function clearAllRecent() {
   db.delete(recentContacts).run();
+}
+
+export function clearAllTemplates() {
+  db.delete(messageTemplates).run();
+}
+
+export function clearAllReminders() {
+  db.delete(reminders).run();
+}
+
+export function clearAllBroadcasts() {
+  db.delete(broadcastContacts).run();
+  db.delete(broadcasts).run();
 }
 
 // -- Broadcasts --
@@ -167,6 +192,38 @@ export function createReminder(
   return r.lastInsertRowId;
 }
 
+export function getAllContactTags(): string[] {
+  const rows = db.select({ tags: recentContacts.tags }).from(recentContacts).all();
+  const tagSet = new Set<string>();
+  for (const row of rows) {
+    if (row.tags) {
+      row.tags.split(",").forEach((t) => {
+        const trimmed = t.trim();
+        if (trimmed) tagSet.add(trimmed);
+      });
+    }
+  }
+  return [...tagSet].sort();
+}
+
+// -- Custom tags (shared pool) --
+
+export function getCustomTags(): string[] {
+  return db
+    .select({ name: customTags.name })
+    .from(customTags)
+    .all()
+    .map((r) => r.name);
+}
+
+export function addCustomTagToDb(name: string) {
+  db.insert(customTags).values({ name }).onConflictDoNothing().run();
+}
+
+export function removeCustomTagFromDb(name: string) {
+  db.delete(customTags).where(eq(customTags.name, name)).run();
+}
+
 export function getAllTags(): string[] {
   const rows = db.select({ tags: reminders.tags }).from(reminders).all();
   const tagSet = new Set<string>();
@@ -185,8 +242,25 @@ export function updateReminderNotification(reminderId: number, notificationId: s
   db.update(reminders).set({ notificationId }).where(eq(reminders.id, reminderId)).run();
 }
 
+export function deleteTagFromAllReminders(tag: string) {
+  const all = getAllReminders();
+  for (const r of all) {
+    if (r.tags) {
+      const filtered = r.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => t && t !== tag);
+      updateReminder(r.id, { tags: filtered.length > 0 ? filtered.join(",") : null });
+    }
+  }
+}
+
 export function completeReminder(reminderId: number) {
   db.update(reminders).set({ completed: 1 }).where(eq(reminders.id, reminderId)).run();
+}
+
+export function reopenReminder(reminderId: number) {
+  db.update(reminders).set({ completed: 0 }).where(eq(reminders.id, reminderId)).run();
 }
 
 export function getAllReminders() {

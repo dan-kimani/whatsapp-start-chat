@@ -1,0 +1,1 @@
+ALTER TABLE `recent_contacts` ADD `tags` text;
