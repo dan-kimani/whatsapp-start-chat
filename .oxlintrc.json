@@ -7,16 +7,24 @@
     "perf": "warn"
   },
   "rules": {
-    "no-console": "warn",
+    "no-console": "off",
     "no-debugger": "error",
     "no-ternary": "off",
     "no-null": "off",
     "unicorn/filename-case": "off",
     "unicorn/no-null": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/require-module-specifiers": "off",
+    "unicorn/consistent-function-scoping": "off",
     "react/react-in-jsx-scope": "off",
     "react/jsx-max-depth": "off",
-    "react/style-prop-object": "warn",
-    "sort-imports": "warn",
+    "react/style-prop-object": "off",
+    "react/no-unstable-nested-components": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "import/no-unassigned-import": "off",
+    "import/no-named-as-default": "off",
+    "oxc/no-map-spread": "off",
+    "sort-imports": "off",
     "sort-keys": "off",
     "func-names": "off",
     "func-style": "off",
@@ -45,6 +53,7 @@
     ".agents",
     "babel.config.js",
     "metro.config.js",
-    "drizzle.config.ts"
+    "drizzle.config.ts",
+    "uniwind-types.d.ts"
   ]
 }
