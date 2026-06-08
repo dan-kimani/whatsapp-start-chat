@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { MessageCircle, Megaphone, MessageSquareText, Bell } from "lucide-react-native";
+import { Bell, Megaphone, MessageCircle, MessageSquareText } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,7 +9,10 @@ export default function AppHeader() {
   return (
     <View style={{ paddingTop: insets.top + 16 }} className="px-6 pb-4">
       <View className="mb-3 flex-row items-center justify-between">
-        <View className="flex-row items-center">
+        <Pressable
+          onPress={() => router.push("/settings")}
+          className="flex-row items-center active:opacity-70"
+        >
           <View className="mr-3 rounded-xl bg-gray-100 p-2 dark:bg-gray-800">
             <MessageCircle size={24} color="#059669" />
           </View>
@@ -18,7 +21,7 @@ export default function AppHeader() {
               Atomic IQ
             </Text>
           </View>
-        </View>
+        </Pressable>
         <View className="flex-row gap-2">
           <Pressable
             onPress={() => router.push("/reminders")}

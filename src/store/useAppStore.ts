@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import * as IntentLauncher from "expo-intent-launcher";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
-import { getAllCountries, FlagType } from "react-native-country-picker-modal";
+import { FlagType, getAllCountries } from "react-native-country-picker-modal";
 import type { Country as PickerCountry } from "react-native-country-picker-modal";
 import { create } from "zustand";
 
@@ -61,6 +61,8 @@ interface RecentContactData {
   country: string;
   flag: string;
   usedAt: Date;
+  notes?: string | null;
+  tags?: string | null;
 }
 
 // Format phone number with spaces for better readability
@@ -114,6 +116,13 @@ interface AppStore {
   deleteRecentContact: (phoneNumber: string) => Promise<void>;
   clearAllRecentContacts: () => Promise<void>;
   loadMoreRecentContacts: () => void;
+  customTags: string[];
+  addCustomTag: (tag: string) => void;
+  removeCustomTag: (tag: string) => void;
+  clipboardDetection: boolean;
+  toggleClipboardDetection: () => void;
+  notificationSound: boolean;
+  toggleNotificationSound: () => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -126,6 +135,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
   contactNames: {},
   templates: [],
   recentContacts: [],
+
+  // Lazy-loaded from DB on first access (migration may not have run at import time)
+  customTags: (() => {
+    try {
+      return db.getCustomTags();
+    } catch {
+      return [];
+    }
+  })(),
+  addCustomTag: (tag) => {
+    const trimmed = tag.trim();
+    if (!trimmed) return;
+    set((s) => {
+      if (s.customTags.includes(trimmed)) return s;
+      db.addCustomTagToDb(trimmed);
+      return { customTags: [...s.customTags, trimmed].sort() };
+    });
+  },
+  removeCustomTag: (tag) => {
+    db.removeCustomTagFromDb(tag);
+    set((s) => ({ customTags: s.customTags.filter((t) => t !== tag) }));
+  },
+
+  clipboardDetection: true,
+  toggleClipboardDetection: () => set((s) => ({ clipboardDetection: !s.clipboardDetection })),
+
+  notificationSound: true,
+  toggleNotificationSound: () => set((s) => ({ notificationSound: !s.notificationSound })),
 
   setPhoneNumber: (phone) => {
     const cleaned = phone.replace(/\D/g, "");
@@ -212,18 +249,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const message = (get().messageText ?? "").trim();
     const whatsappUrl = `whatsapp://send?phone=${fullNumber}${message ? `&text=${encodeURIComponent(message)}` : ""}`;
 
-    // Save to recent contacts
-    try {
-      await db.saveContact(
-        rawPhoneNumber,
-        selectedCountry.code,
-        selectedCountry.country,
-        selectedCountry.flag,
-      );
-      await get().loadRecentContacts();
-    } catch (error) {
-      console.error("Failed to save recent contact:", error);
-    }
+    // Save to recent contacts (fire-and-forget — don't block WhatsApp)
+    db.saveContact(
+      rawPhoneNumber,
+      selectedCountry.code,
+      selectedCountry.country,
+      selectedCountry.flag,
+    )
+      .then(() => get().loadRecentContacts())
+      .catch(() => {});
 
     // Open WhatsApp - Android will show chooser if both apps are installed
     Linking.openURL(whatsappUrl);
@@ -239,17 +273,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const digits = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
     const fullNumber = `+${digits}`;
 
-    try {
-      await db.saveContact(
-        rawPhoneNumber,
-        selectedCountry.code,
-        selectedCountry.country,
-        selectedCountry.flag,
-      );
-      get().loadRecentContacts();
-    } catch (error) {
-      console.error("Failed to save recent contact:", error);
-    }
+    // Save to recent contacts (fire-and-forget — don't block dialer)
+    db.saveContact(
+      rawPhoneNumber,
+      selectedCountry.code,
+      selectedCountry.country,
+      selectedCountry.flag,
+    )
+      .then(() => get().loadRecentContacts())
+      .catch(() => {});
 
     Linking.openURL(`tel:${fullNumber}`);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -325,6 +357,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           country,
           flag,
           usedAt: new Date(contact.usedAt),
+          notes: contact.notes,
+          tags: contact.tags,
         };
       });
 
@@ -379,6 +413,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         country,
         flag,
         usedAt: new Date(contact.usedAt),
+        notes: contact.notes,
+        tags: contact.tags,
       };
     });
 

@@ -34,7 +34,7 @@ export default function Layout() {
   }, []);
 
   return (
-    <Host style={{ flex: 1 }} useViewportSizeMeasurement matchContents>
+    <Host style={{ flex: 1 }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-white dark:bg-gray-950">
           <StatusBar style="auto" />

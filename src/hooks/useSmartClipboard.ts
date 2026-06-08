@@ -1,6 +1,8 @@
 import * as Clipboard from "expo-clipboard";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
+
+import { useAppStore } from "../store/useAppStore";
 
 export function useSmartClipboard(currentRawValue: string) {
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);
@@ -9,6 +11,12 @@ export function useSmartClipboard(currentRawValue: string) {
 
   useEffect(() => {
     const checkClipboard = async () => {
+      // Respect clipboard detection setting
+      if (!useAppStore.getState().clipboardDetection) {
+        setClipboardContent(null);
+        return;
+      }
+
       const hasString = await Clipboard.hasStringAsync();
       if (!hasString) {
         setClipboardContent(null);
@@ -20,7 +28,7 @@ export function useSmartClipboard(currentRawValue: string) {
       // Simple validation: Allow +, spaces, dashes, parentheses
       // Must contain at least 5 digits to be worth pasting
       const digitCount = (content.match(/\d/g) || []).length;
-      const validChars = /^[+\d\s\-\(\).]*$/;
+      const validChars = /^[+\d\s\-().]*$/;
 
       // Check against current value to avoid showing what user already typed
       const isDifferent = content.replace(/\D/g, "") !== rawValueRef.current;

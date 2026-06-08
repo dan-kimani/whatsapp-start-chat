@@ -1,35 +1,27 @@
 import { router } from "expo-router";
 import { ChevronRight, Plus, SendHorizontal } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { getBroadcasts, getBroadcastProgress } from "../db";
-
-interface Draft {
-  id: number;
-  message: string;
-  createdAt: number;
-  total: number;
-  sent: number;
-}
+import { useBroadcastStore } from "../store/useBroadcastStore";
 
 export default function BroadcastList() {
-  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const drafts = useBroadcastStore((s) => s.drafts);
+  const loadList = useBroadcastStore((s) => s.loadList);
   const insets = useSafeAreaInsets();
 
-  const load = () => {
-    const broadcasts = getBroadcasts();
-    const withProgress = broadcasts.map((b) => {
-      const progress = getBroadcastProgress(b.id);
-      return { ...b, ...progress };
-    });
-    setDrafts(withProgress);
-  };
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    load();
-  }, []);
+    loadList();
+  }, [loadList]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadList();
+    setRefreshing(false);
+  }, [loadList]);
 
   return (
     <View className="flex-1 bg-white dark:bg-gray-950" style={{ paddingTop: insets.top }}>
@@ -45,6 +37,7 @@ export default function BroadcastList() {
 
       <FlatList
         data={drafts}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         keyExtractor={(d) => String(d.id)}
         ListEmptyComponent={

@@ -1,52 +1,41 @@
-import * as Haptics from "expo-haptics";
-import * as Linking from "expo-linking";
-import { useLocalSearchParams, router } from "expo-router";
-import { Plus, X, Check, Circle, SendHorizontal, ArrowLeft, Trash2 } from "lucide-react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { ArrowLeft, Check, Circle, Plus, SendHorizontal, Trash2, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AppState, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import MessageEditor from "../../components/MessageEditor";
-import TemplateChips from "../../components/TemplateChips";
-import * as db from "../../db";
-import { useAppStore, formatPhoneNumber } from "../../store/useAppStore";
-
-interface Contact {
-  id: number;
-  broadcastId: number;
-  phoneNumber: string;
-  countryCode: string;
-  sent: number;
-}
+import MessageEditor from "../../components/Message/MessageEditor";
+import TemplateChips from "../../components/Templates/TemplateChips";
+import { formatPhoneNumber, useAppStore } from "../../store/useAppStore";
+import { useBroadcastStore } from "../../store/useBroadcastStore";
 
 export default function BroadcastDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const broadcastId = parseInt(id, 10);
   const selectedCountry = useAppStore((s) => s.selectedCountry);
 
-  const [message, setMessage] = useState("");
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [newNumber, setNewNumber] = useState("");
-  const [loaded, setLoaded] = useState(false);
+  const message = useBroadcastStore((s) => s.message);
+  const contacts = useBroadcastStore((s) => s.contacts);
+  const loaded = useBroadcastStore((s) => s.loaded);
+  const loadDetail = useBroadcastStore((s) => s.loadDetail);
+  const setMessage = useBroadcastStore((s) => s.setMessage);
+  const addContact = useBroadcastStore((s) => s.addContact);
+  const removeContact = useBroadcastStore((s) => s.removeContact);
+  const deleteBroadcast = useBroadcastStore((s) => s.deleteBroadcast);
+  const sendToContact = useBroadcastStore((s) => s.sendToContact);
 
+  const [newNumber, setNewNumber] = useState("");
   const insets = useSafeAreaInsets();
   const appState = useRef(AppState.currentState);
 
-  const load = async () => {
-    const b = await db.getBroadcast(broadcastId);
-    if (!b) {
-      router.back();
-      return;
-    }
-    setMessage(b.message);
-    const cs = await db.getBroadcastContacts(broadcastId);
-    setContacts(cs);
-    setLoaded(true);
+  const load = () => {
+    const found = loadDetail(broadcastId);
+    if (!found) router.back();
   };
 
   useEffect(() => {
     load();
-  }, [broadcastId]);
+  }, [broadcastId, loadDetail]);
 
   // Track app state to detect return from WhatsApp
   useEffect(() => {
@@ -59,45 +48,25 @@ export default function BroadcastDetail() {
     return () => sub.remove();
   }, []);
 
-  const saveMessage = (text: string) => {
-    setMessage(text);
-    db.updateBroadcastMessage(broadcastId, text);
-  };
-
-  const addContact = async () => {
+  const handleAddContact = () => {
     const digits = `${selectedCountry.code}${newNumber}`.replace(/\D/g, "");
     if (digits.length < 9) return;
-    await db.addBroadcastContact(broadcastId, newNumber.replace(/\D/g, ""), selectedCountry.code);
+    addContact(broadcastId, newNumber, selectedCountry.code);
     setNewNumber("");
-    load();
   };
 
-  const removeContact = async (contactId: number) => {
-    await db.removeBroadcastContact(contactId);
-    load();
-  };
-
-  const deleteBroadcast = () => {
+  const handleDeleteBroadcast = () => {
     Alert.alert("Delete broadcast?", "This will remove the draft and all contacts.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          db.deleteBroadcast(broadcastId);
+          deleteBroadcast(broadcastId);
           router.back();
         },
       },
     ]);
-  };
-
-  const sendToContact = async (contact: Contact) => {
-    const digits = `${contact.countryCode}${contact.phoneNumber}`.replace(/\D/g, "");
-    const msgParam = message.trim() ? `&text=${encodeURIComponent(message.trim())}` : "";
-    Linking.openURL(`whatsapp://send?phone=+${digits}${msgParam}`);
-    db.markBroadcastContactSent(contact.id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    load();
   };
 
   const nextContact = contacts.find((c) => !c.sent);
@@ -115,7 +84,7 @@ export default function BroadcastDetail() {
         <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
           Broadcast
         </Text>
-        <Pressable onPress={deleteBroadcast} className="p-2">
+        <Pressable onPress={handleDeleteBroadcast} className="p-2">
           <Trash2 size={20} color="#ef4444" />
         </Pressable>
       </View>
@@ -135,10 +104,10 @@ export default function BroadcastDetail() {
       )}
 
       <View className="mb-4 px-5">
-        <TemplateChips onSelect={saveMessage} />
+        <TemplateChips onSelect={(text) => setMessage(broadcastId, text)} />
         <MessageEditor
           value={message}
-          onChangeText={saveMessage}
+          onChangeText={(text) => setMessage(broadcastId, text)}
           placeholder="Broadcast message..."
         />
       </View>
@@ -153,11 +122,11 @@ export default function BroadcastDetail() {
           keyboardType="phone-pad"
           className="flex-1 rounded-xl bg-gray-50 px-4 py-3 text-base text-gray-900 dark:bg-gray-800 dark:text-gray-100"
           maxLength={20}
-          onSubmitEditing={addContact}
+          onSubmitEditing={handleAddContact}
           returnKeyType="done"
         />
         <Pressable
-          onPress={addContact}
+          onPress={handleAddContact}
           className="rounded-xl bg-emerald-500 p-3 active:bg-emerald-600"
           disabled={newNumber.replace(/\D/g, "").length < 9}
         >
@@ -188,7 +157,7 @@ export default function BroadcastDetail() {
             </View>
             {!c.sent && (
               <Pressable
-                onPress={() => sendToContact(c)}
+                onPress={() => sendToContact(c, message)}
                 className="flex-row items-center rounded-xl bg-emerald-500 px-4 py-2 active:bg-emerald-600"
               >
                 <SendHorizontal size={14} color="#fff" />
@@ -208,7 +177,7 @@ export default function BroadcastDetail() {
           style={{ paddingBottom: insets.bottom + 8 }}
         >
           <Pressable
-            onPress={() => sendToContact(nextContact)}
+            onPress={() => sendToContact(nextContact, message)}
             className="flex-row items-center justify-center rounded-xl bg-emerald-500 py-4 active:bg-emerald-600"
           >
             <SendHorizontal size={18} color="#fff" />

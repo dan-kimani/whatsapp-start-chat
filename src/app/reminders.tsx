@@ -1,68 +1,41 @@
-import * as Haptics from "expo-haptics";
-import * as Linking from "expo-linking";
 import { router } from "expo-router";
-import {
-  ArrowLeft,
-  Bell,
-  Check,
-  Clock,
-  MessageCircle,
-  MoreVertical,
-  Pencil,
-  Star,
-  Sun,
-  Tag,
-  Trash2,
-} from "lucide-react-native";
-import { useEffect, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  Text,
-  View,
-  useColorScheme,
-  useWindowDimensions,
-} from "react-native";
+import { ArrowLeft, Bell, CalendarDays, List } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ReminderSheet, { type ReminderEditData } from "../components/ReminderSheet";
-import { completeReminder, deleteReminderById, getAllReminders } from "../db";
-import { formatPhoneNumber } from "../store/useAppStore";
+import CalendarView from "../components/Reminders/CalendarView";
+import FilterBar from "../components/Reminders/FilterBar";
+import ReminderItem from "../components/Reminders/ReminderItem";
+import ReminderMenu from "../components/Reminders/ReminderMenu";
+import ReminderSheet from "../components/Reminders/ReminderSheet";
+import TagPickerModal from "../components/Reminders/TagPickerModal";
+import { useAppStore } from "../store/useAppStore";
+import { useRemindersPageStore } from "../store/useRemindersPageStore";
+import { type ReminderEditData } from "../store/useReminderStore";
 
-interface Reminder {
-  id: number;
-  phoneNumber: string;
-  countryCode: string;
-  message: string;
-  scheduledAt: number;
-  notificationId: string | null;
-  completed: number;
-  priority: number;
-  myDay: number;
-  tags: string | null;
-  createdAt: number;
+function isoDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function RemindersPage() {
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [filter, setFilter] = useState<string>("all");
-  const [editReminder, setEditReminder] = useState<ReminderEditData | null>(null);
-  const [editVisible, setEditVisible] = useState(false);
-  const [menuReminderId, setMenuReminderId] = useState<number | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 16 });
-  const isDark = useColorScheme() === "dark";
-  const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const store = useRemindersPageStore();
+  const customTags = useAppStore((s) => s.customTags);
+  const addCustomTag = useAppStore((s) => s.addCustomTag);
 
-  const load = () => setReminders(getAllReminders());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    load();
-  }, []);
+    store.load();
+  }, [store.load]);
 
-  // ── Filters ─────────────────────────────────────────────────────────────────
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    store.load();
+    setRefreshing(false);
+  }, [store.load]);
+
   const now = Date.now();
 
   const todayStart = new Date();
@@ -70,17 +43,16 @@ export default function RemindersPage() {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const todayReminders = reminders.filter((r) => {
+  const todayReminders = store.reminders.filter((r) => {
     if (r.myDay === 1) return true;
     const t = r.scheduledAt;
     return t >= todayStart.getTime() && t <= todayEnd.getTime();
   });
-  const priorityReminders = reminders.filter((r) => r.priority === 1);
+  const priorityReminders = store.reminders.filter((r) => r.priority === 1);
 
-  // Extract unique tags from all reminders
   const allTags: string[] = (() => {
     const tagSet = new Set<string>();
-    for (const r of reminders) {
+    for (const r of store.reminders) {
       if (r.tags) {
         r.tags.split(",").forEach((t) => {
           const trimmed = t.trim();
@@ -88,126 +60,110 @@ export default function RemindersPage() {
         });
       }
     }
+    for (const t of customTags) tagSet.add(t);
     return [...tagSet].sort();
   })();
 
+  const tagCounts: Record<string, number> = {};
+  for (const tag of allTags) {
+    tagCounts[tag] = store.reminders.filter(
+      (r) => r.tags && r.tags.split(",").some((t) => t.trim() === tag),
+    ).length;
+  }
+
   const filtered =
-    filter === "all"
-      ? reminders
-      : filter === "today"
+    store.filter === "all"
+      ? store.reminders
+      : store.filter === "today"
         ? todayReminders
-        : filter === "priority"
+        : store.filter === "priority"
           ? priorityReminders
-          : reminders.filter((r) => {
+          : store.reminders.filter((r) => {
               if (!r.tags) return false;
-              return r.tags.split(",").some((t) => t.trim() === filter);
+              return r.tags.split(",").some((t) => t.trim() === store.filter);
             });
-
-  const handleDelete = (id: number) => {
-    Alert.alert("Delete reminder?", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          deleteReminderById(id);
-          load();
-        },
-      },
-    ]);
-  };
-
-  const handleComplete = (id: number) => {
-    completeReminder(id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    load();
-  };
-
-  const handleOpenWhatsApp = (r: Reminder) => {
-    const digits = `${r.countryCode}${r.phoneNumber}`.replace(/\D/g, "");
-    const msgParam = r.message ? `&text=${encodeURIComponent(r.message)}` : "";
-    Linking.openURL(`whatsapp://send?phone=+${digits}${msgParam}`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
 
   const upcoming = filtered.filter((r) => !r.completed && r.scheduledAt > now);
   const overdue = filtered.filter((r) => !r.completed && r.scheduledAt <= now);
   const done = filtered.filter((r) => r.completed);
 
-  const renderItem = (r: Reminder, isOverdue: boolean) => (
-    <View key={r.id} className="mb-2 rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1">
-          <Text className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            {r.countryCode} {formatPhoneNumber(r.phoneNumber)}
-          </Text>
-          {r.message ? (
-            <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400" numberOfLines={2}>
-              {r.message}
-            </Text>
-          ) : null}
-          <View className="mt-2 flex-row items-center">
-            <Clock size={12} color={isOverdue ? "#ef4444" : "#9ca3af"} />
-            <Text
-              className={`ml-1 text-xs ${isOverdue ? "text-red-500" : "text-gray-400 dark:text-gray-500"}`}
-            >
-              {isOverdue ? "Overdue: " : ""}
-              {new Date(r.scheduledAt).toLocaleString()}
-            </Text>
-            {r.priority === 1 && (
-              <View className="ml-2 flex-row items-center rounded-full bg-amber-100 px-1.5 py-0.5 dark:bg-amber-900/30">
-                <Star size={10} color="#d97706" fill="#d97706" />
-                <Text className="ml-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                  Priority
-                </Text>
-              </View>
-            )}
-            {r.myDay === 1 && (
-              <View className="ml-2 flex-row items-center rounded-full bg-sky-100 px-1.5 py-0.5 dark:bg-sky-900/30">
-                <Sun size={10} color="#0284c7" />
-                <Text className="ml-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-400">
-                  My Day
-                </Text>
-              </View>
-            )}
-            {r.tags &&
-              r.tags.split(",").map((tag) => {
-                const trimmed = tag.trim();
-                if (!trimmed) return null;
-                return (
-                  <View
-                    key={trimmed}
-                    className="ml-2 flex-row items-center rounded-full bg-indigo-100 px-1.5 py-0.5 dark:bg-indigo-900/30"
-                  >
-                    <Tag size={9} color="#4f46e5" />
-                    <Text className="ml-0.5 text-[10px] font-semibold text-indigo-700 dark:text-indigo-400">
-                      {trimmed}
-                    </Text>
-                  </View>
-                );
-              })}
-          </View>
-        </View>
+  const dateMatches = (r: (typeof store.reminders)[0]) =>
+    isoDate(new Date(r.scheduledAt)) === store.selectedDate;
 
-        <View className="ml-3">
-          <Pressable
-            onPress={(e) => {
-              (e.target as any).measureInWindow((_x: number, y: number, _w: number, h: number) => {
-                const menuH = 176;
-                const flipped = y + h + menuH > screenHeight;
-                setMenuPos({ top: flipped ? y - menuH - 4 : y + h + 4, right: 20 });
-                setMenuReminderId(r.id);
-              });
-            }}
-            className="rounded-full bg-gray-100 p-2 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600"
-            hitSlop={6}
-          >
-            <MoreVertical size={16} color={isDark ? "#9ca3af" : "#6b7280"} />
-          </Pressable>
-        </View>
-      </View>
-    </View>
+  const selectedDateReminders = store.selectedDate ? store.reminders.filter(dateMatches) : [];
+  const selectedDateActive = selectedDateReminders.filter((r) => !r.completed);
+  const selectedDateDone = selectedDateReminders.filter((r) => r.completed);
+
+  const menuReminder = useMemo(
+    () => store.reminders.find((r) => r.id === store.menuReminderId) ?? null,
+    [store.reminders, store.menuReminderId],
   );
+
+  const handleDelete = (id: number) => {
+    Alert.alert("Delete reminder?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => store.deleteReminder(id) },
+    ]);
+  };
+
+  const handleDeleteTag = (tag: string) => {
+    Alert.alert(`Delete tag "${tag}"?`, "This will remove it from all reminders.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => store.deleteTag(tag) },
+    ]);
+  };
+
+  const renderListHeader = () => {
+    if (filtered.length === 0) return null;
+    return (
+      <View>
+        {overdue.length > 0 && (
+          <View className="mb-4">
+            <Text className="mb-2 text-sm font-bold text-red-500">Overdue</Text>
+            {overdue.map((r) => (
+              <ReminderItem
+                key={r.id}
+                reminder={r}
+                isOverdue
+                onMenuOpen={(id, pos) => store.openMenu(id, "active", pos)}
+              />
+            ))}
+          </View>
+        )}
+        {upcoming.length > 0 && (
+          <View className="mb-4">
+            <Text className="mb-2 text-sm font-bold text-gray-400 dark:text-gray-500">
+              Upcoming
+            </Text>
+            {upcoming.map((r) => (
+              <ReminderItem
+                key={r.id}
+                reminder={r}
+                isOverdue={false}
+                onMenuOpen={(id, pos) => store.openMenu(id, "active", pos)}
+              />
+            ))}
+          </View>
+        )}
+        {done.length > 0 && (
+          <View className="mb-4">
+            <Text className="mb-2 text-sm font-bold text-gray-400 dark:text-gray-500">
+              Completed
+            </Text>
+            {done.map((r) => (
+              <ReminderItem
+                key={r.id}
+                reminder={r}
+                isOverdue={false}
+                isCompleted
+                onMenuOpen={(id, pos) => store.openMenu(id, "completed", pos)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <View className="flex-1 bg-white dark:bg-gray-950" style={{ paddingTop: insets.top }}>
@@ -218,229 +174,158 @@ export default function RemindersPage() {
         <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
           Reminders
         </Text>
-        <View style={{ width: 38 }} />
+        <Pressable
+          onPress={() => store.setViewMode(store.viewMode === "list" ? "calendar" : "list")}
+          className="p-2"
+        >
+          {store.viewMode === "calendar" ? (
+            <List size={22} color="#6b7280" />
+          ) : (
+            <CalendarDays size={22} color="#6b7280" />
+          )}
+        </Pressable>
       </View>
 
-      <View className="flex-row flex-wrap gap-2 px-4 pb-2">
-        <Pressable
-          onPress={() => setFilter(filter === "today" ? "all" : "today")}
-          className={`flex-row items-center gap-1.5 rounded-xl border px-3 py-2 ${filter === "today" ? "border-emerald-600 bg-emerald-600" : "border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"}`}
-        >
-          <Text
-            className={`text-[13px] font-semibold ${filter === "today" ? "text-white" : "text-gray-900 dark:text-gray-50"}`}
-          >
-            My Day
-          </Text>
-          {todayReminders.length > 0 && (
-            <View
-              className={`rounded-full px-1.5 py-0.5 ${filter === "today" ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`}
-            >
-              <Text
-                className={`text-[11px] font-bold ${filter === "today" ? "text-white" : "text-gray-500 dark:text-gray-300"}`}
-              >
-                {todayReminders.length}
-              </Text>
-            </View>
-          )}
-        </Pressable>
-        <Pressable
-          onPress={() => setFilter(filter === "priority" ? "all" : "priority")}
-          className={`flex-row items-center gap-1.5 rounded-xl border px-3 py-2 ${filter === "priority" ? "border-amber-500 bg-amber-500" : "border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"}`}
-        >
-          <Star
-            size={13}
-            color={filter === "priority" ? "#fff" : "#9ca3af"}
-            fill={filter === "priority" ? "#fff" : "none"}
-          />
-          <Text
-            className={`text-[13px] font-semibold ${filter === "priority" ? "text-white" : "text-gray-900 dark:text-gray-50"}`}
-          >
-            Priority
-          </Text>
-          {priorityReminders.length > 0 && (
-            <View
-              className={`rounded-full px-1.5 py-0.5 ${filter === "priority" ? "bg-amber-400" : "bg-gray-300 dark:bg-gray-600"}`}
-            >
-              <Text
-                className={`text-[11px] font-bold ${filter === "priority" ? "text-white" : "text-gray-500 dark:text-gray-300"}`}
-              >
-                {priorityReminders.length}
-              </Text>
-            </View>
-          )}
-        </Pressable>
-        {allTags.map((tag) => {
-          const isActive = filter === tag;
-          const tagCount = reminders.filter(
-            (r) => r.tags && r.tags.split(",").some((t) => t.trim() === tag),
-          ).length;
-          return (
-            <Pressable
-              key={tag}
-              onPress={() => setFilter(isActive ? "all" : tag)}
-              className={`flex-row items-center gap-1 rounded-xl border px-3 py-2 ${isActive ? "border-indigo-500 bg-indigo-500" : "border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"}`}
-            >
-              <Tag size={12} color={isActive ? "#fff" : "#9ca3af"} />
-              <Text
-                className={`text-[13px] font-semibold ${isActive ? "text-white" : "text-gray-900 dark:text-gray-50"}`}
-              >
-                {tag}
-              </Text>
-              <View
-                className={`rounded-full px-1.5 py-0.5 ${isActive ? "bg-indigo-400" : "bg-gray-300 dark:bg-gray-600"}`}
-              >
-                <Text
-                  className={`text-[11px] font-bold ${isActive ? "text-white" : "text-gray-500 dark:text-gray-300"}`}
-                >
-                  {tagCount}
+      {store.viewMode === "list" && (
+        <FilterBar
+          filter={store.filter}
+          todayCount={todayReminders.length}
+          priorityCount={priorityReminders.length}
+          allTags={allTags}
+          onFilterChange={store.setFilter}
+          onTagPickerOpen={store.openTagPicker}
+          onCreateTag={(name) => addCustomTag(name)}
+        />
+      )}
+
+      {store.viewMode === "list" ? (
+        <FlatList
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+          data={[]}
+          renderItem={() => null}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+          ListEmptyComponent={
+            filtered.length === 0 ? (
+              <View className="items-center py-20">
+                <Bell size={48} color="#9ca3af" />
+                <Text className="mt-4 text-center text-base text-gray-400 dark:text-gray-500">
+                  {store.reminders.length === 0
+                    ? "No reminders yet\nTap the bell icon on a recent contact"
+                    : "No reminders match this filter"}
                 </Text>
               </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <FlatList
-        data={[]}
-        renderItem={() => null}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-        ListEmptyComponent={
-          filtered.length === 0 ? (
-            <View className="items-center py-20">
-              <Bell size={48} color="#9ca3af" />
-              <Text className="mt-4 text-center text-base text-gray-400 dark:text-gray-500">
-                {reminders.length === 0
-                  ? "No reminders yet\nTap the bell icon on a recent contact"
-                  : "No reminders match this filter"}
-              </Text>
-            </View>
-          ) : null
-        }
-        ListHeaderComponent={
-          filtered.length > 0 ? (
-            <View>
-              {overdue.length > 0 && (
-                <View className="mb-4">
-                  <Text className="mb-2 text-sm font-bold text-red-500">Overdue</Text>
-                  {overdue.map((r) => renderItem(r, true))}
-                </View>
-              )}
-              {upcoming.length > 0 && (
-                <View className="mb-4">
+            ) : null
+          }
+          ListHeaderComponent={renderListHeader()}
+        />
+      ) : (
+        <View className="flex-1">
+          <CalendarView
+            reminders={store.reminders}
+            selectedDate={store.selectedDate}
+            onSelectDate={store.setSelectedDate}
+          />
+          {store.selectedDate ? (
+            <FlatList
+              data={[]}
+              renderItem={() => null}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+              ListHeaderComponent={
+                <View className="mt-2">
                   <Text className="mb-2 text-sm font-bold text-gray-400 dark:text-gray-500">
-                    Upcoming
+                    {new Date(store.selectedDate + "T00:00:00").toLocaleDateString("en", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </Text>
-                  {upcoming.map((r) => renderItem(r, false))}
-                </View>
-              )}
-              {done.length > 0 && (
-                <View className="mb-4">
-                  <Text className="mb-2 text-sm font-bold text-gray-400 dark:text-gray-500">
-                    Completed
-                  </Text>
-                  {done.map((r) => (
-                    <View
+                  {selectedDateActive.map((r) => (
+                    <ReminderItem
                       key={r.id}
-                      className="mb-2 rounded-xl bg-gray-50 p-4 opacity-60 dark:bg-gray-800"
-                    >
-                      <View className="flex-row items-center">
-                        <Check size={16} color="#059669" />
-                        <Text className="ml-2 text-base font-semibold text-gray-400 dark:text-gray-500">
-                          {r.countryCode} {formatPhoneNumber(r.phoneNumber)}
-                        </Text>
-                      </View>
-                      {r.message ? (
-                        <Text
-                          className="mt-1 ml-6 text-xs text-gray-400 dark:text-gray-500"
-                          numberOfLines={1}
-                        >
-                          {r.message}
-                        </Text>
-                      ) : null}
-                    </View>
+                      reminder={r}
+                      isOverdue={r.scheduledAt <= Date.now()}
+                      onMenuOpen={(id, pos) => store.openMenu(id, "active", pos)}
+                    />
+                  ))}
+                  {selectedDateDone.map((r) => (
+                    <ReminderItem
+                      key={r.id}
+                      reminder={r}
+                      isOverdue={false}
+                      isCompleted
+                      onMenuOpen={(id, pos) => store.openMenu(id, "completed", pos)}
+                    />
                   ))}
                 </View>
-              )}
+              }
+              ListEmptyComponent={
+                <Text className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+                  No reminders for this date
+                </Text>
+              }
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <CalendarDays size={32} color="#9ca3af" />
+              <Text className="mt-2 text-sm text-gray-400 dark:text-gray-500">
+                Select a date to see reminders
+              </Text>
             </View>
-          ) : undefined
-        }
+          )}
+        </View>
+      )}
+
+      <TagPickerModal
+        visible={store.tagPickerOpen}
+        tags={allTags}
+        tagCounts={tagCounts}
+        insetsBottom={insets.bottom}
+        onSelect={(tag) => {
+          store.setFilter(tag);
+          store.closeTagPicker();
+        }}
+        onDelete={(tag) => {
+          store.closeTagPicker();
+          handleDeleteTag(tag);
+        }}
+        onClose={store.closeTagPicker}
       />
 
-      {menuReminderId !== null &&
-        (() => {
-          const menuReminder = reminders.find((r) => r.id === menuReminderId);
-          if (!menuReminder) return null;
-          return (
-            <Modal
-              visible
-              transparent
-              animationType="fade"
-              onRequestClose={() => setMenuReminderId(null)}
-            >
-              <Pressable style={{ flex: 1 }} onPress={() => setMenuReminderId(null)} />
-              <View
-                className="absolute rounded-xl border border-gray-100 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
-                style={{ top: menuPos.top, right: menuPos.right, minWidth: 170 }}
-              >
-                <Pressable
-                  onPress={() => {
-                    setMenuReminderId(null);
-                    handleOpenWhatsApp(menuReminder);
-                  }}
-                  className="flex-row items-center px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700"
-                >
-                  <MessageCircle size={16} color="#059669" />
-                  <Text className="ml-3 text-sm text-gray-700 dark:text-gray-300">WhatsApp</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setMenuReminderId(null);
-                    setEditReminder(menuReminder as ReminderEditData);
-                    setEditVisible(true);
-                  }}
-                  className="flex-row items-center px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700"
-                >
-                  <Pencil size={16} color="#6b7280" />
-                  <Text className="ml-3 text-sm text-gray-700 dark:text-gray-300">Edit</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setMenuReminderId(null);
-                    handleComplete(menuReminder.id);
-                  }}
-                  className="flex-row items-center px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700"
-                >
-                  <Check size={16} color="#059669" />
-                  <Text className="ml-3 text-sm text-gray-700 dark:text-gray-300">Complete</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setMenuReminderId(null);
-                    handleDelete(menuReminder.id);
-                  }}
-                  className="flex-row items-center px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700"
-                >
-                  <Trash2 size={16} color="#ef4444" />
-                  <Text className="ml-3 text-sm text-red-500">Delete</Text>
-                </Pressable>
-              </View>
-            </Modal>
-          );
-        })()}
+      <ReminderMenu
+        visible={menuReminder !== null}
+        position={store.menuPos}
+        mode={store.menuMode}
+        onClose={store.closeMenu}
+        onWhatsApp={() => menuReminder && store.openWhatsApp(menuReminder)}
+        onEdit={() => {
+          if (menuReminder) store.openEdit(menuReminder as ReminderEditData);
+          store.closeMenu();
+        }}
+        onComplete={() => {
+          if (menuReminder) store.completeReminder(menuReminder.id);
+          store.closeMenu();
+        }}
+        onReopen={() => {
+          if (menuReminder) store.reopenReminder(menuReminder.id);
+          store.closeMenu();
+        }}
+        onDelete={() => {
+          if (menuReminder) handleDelete(menuReminder.id);
+          store.closeMenu();
+        }}
+      />
 
       <ReminderSheet
-        visible={editVisible}
-        phoneNumber={editReminder?.phoneNumber || ""}
-        countryCode={editReminder?.countryCode || ""}
-        editReminder={editReminder}
-        onClose={() => {
-          setEditVisible(false);
-          setEditReminder(null);
-        }}
+        visible={store.editVisible}
+        phoneNumber={store.editReminder?.phoneNumber || ""}
+        countryCode={store.editReminder?.countryCode || ""}
+        editReminder={store.editReminder}
+        onClose={store.closeEdit}
         onSaved={() => {
-          load();
-          setEditVisible(false);
-          setEditReminder(null);
+          store.load();
+          store.closeEdit();
         }}
       />
     </View>
