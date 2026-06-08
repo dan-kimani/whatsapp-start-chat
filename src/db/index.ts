@@ -1,22 +1,47 @@
 import { eq, desc, and, asc, count, sql } from "drizzle-orm";
+
 import { db } from "./client";
-import { recentContacts, broadcasts, broadcastContacts, messageTemplates, reminders } from "./schema";
+import {
+  recentContacts,
+  broadcasts,
+  broadcastContacts,
+  messageTemplates,
+  reminders,
+} from "./schema";
 
 // -- Recent Contacts --
 
-export async function saveContact(phoneNumber: string, countryCode: string, country: string, flag: string) {
+export async function saveContact(
+  phoneNumber: string,
+  countryCode: string,
+  country: string,
+  flag: string,
+) {
   const usedAt = Date.now();
-  const existing = db.select().from(recentContacts).where(eq(recentContacts.phoneNumber, phoneNumber)).get();
+  const existing = db
+    .select()
+    .from(recentContacts)
+    .where(eq(recentContacts.phoneNumber, phoneNumber))
+    .get();
 
   if (existing) {
-    db.update(recentContacts).set({ usedAt, countryCode, country, flag }).where(eq(recentContacts.id, existing.id)).run();
+    db.update(recentContacts)
+      .set({ usedAt, countryCode, country, flag })
+      .where(eq(recentContacts.id, existing.id))
+      .run();
   } else {
     db.insert(recentContacts).values({ phoneNumber, countryCode, country, flag, usedAt }).run();
   }
 }
 
 export function getRecentContacts(limit = 20, offset = 0) {
-  return db.select().from(recentContacts).orderBy(desc(recentContacts.usedAt)).limit(limit).offset(offset).all();
+  return db
+    .select()
+    .from(recentContacts)
+    .orderBy(desc(recentContacts.usedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
 }
 
 export function getRecentContactsCount() {
@@ -56,7 +81,12 @@ export function updateBroadcastMessage(id: number, message: string) {
 }
 
 export function getBroadcastContacts(broadcastId: number) {
-  return db.select().from(broadcastContacts).where(eq(broadcastContacts.broadcastId, broadcastId)).orderBy(asc(broadcastContacts.id)).all();
+  return db
+    .select()
+    .from(broadcastContacts)
+    .where(eq(broadcastContacts.broadcastId, broadcastId))
+    .orderBy(asc(broadcastContacts.id))
+    .all();
 }
 
 export function addBroadcastContact(broadcastId: number, phoneNumber: string, countryCode: string) {
@@ -72,7 +102,12 @@ export function markBroadcastContactSent(contactId: number) {
 }
 
 export function getBroadcastProgress(broadcastId: number) {
-  const total = db.select({ c: count() }).from(broadcastContacts).where(eq(broadcastContacts.broadcastId, broadcastId)).get()?.c ?? 0;
+  const total =
+    db
+      .select({ c: count() })
+      .from(broadcastContacts)
+      .where(eq(broadcastContacts.broadcastId, broadcastId))
+      .get()?.c ?? 0;
   const sent =
     db
       .select({ c: count() })
@@ -85,12 +120,19 @@ export function getBroadcastProgress(broadcastId: number) {
 // -- Message Templates --
 
 export function getTemplates() {
-  return db.select({ id: messageTemplates.id, text: messageTemplates.text }).from(messageTemplates).orderBy(asc(messageTemplates.sortOrder)).all();
+  return db
+    .select({ id: messageTemplates.id, text: messageTemplates.text })
+    .from(messageTemplates)
+    .orderBy(asc(messageTemplates.sortOrder))
+    .all();
 }
 
 export function addTemplate(text: string) {
   db.insert(messageTemplates)
-    .values({ text, sortOrder: sql`(SELECT COALESCE(MAX(sort_order), 0) + 1 FROM message_templates)` })
+    .values({
+      text,
+      sortOrder: sql`(SELECT COALESCE(MAX(sort_order), 0) + 1 FROM message_templates)`,
+    })
     .run();
 }
 
@@ -100,9 +142,43 @@ export function deleteTemplate(id: number) {
 
 // -- Reminders --
 
-export function createReminder(phoneNumber: string, countryCode: string, message: string, scheduledAt: number) {
-  const r = db.insert(reminders).values({ phoneNumber, countryCode, message, scheduledAt, createdAt: Date.now() }).run();
+export function createReminder(
+  phoneNumber: string,
+  countryCode: string,
+  message: string,
+  scheduledAt: number,
+  priority = 0,
+  myDay = 0,
+  tags: string | null = null,
+) {
+  const r = db
+    .insert(reminders)
+    .values({
+      phoneNumber,
+      countryCode,
+      message,
+      scheduledAt,
+      priority,
+      myDay,
+      tags,
+      createdAt: Date.now(),
+    })
+    .run();
   return r.lastInsertRowId;
+}
+
+export function getAllTags(): string[] {
+  const rows = db.select({ tags: reminders.tags }).from(reminders).all();
+  const tagSet = new Set<string>();
+  for (const row of rows) {
+    if (row.tags) {
+      row.tags.split(",").forEach((t) => {
+        const trimmed = t.trim();
+        if (trimmed) tagSet.add(trimmed);
+      });
+    }
+  }
+  return [...tagSet].sort();
 }
 
 export function updateReminderNotification(reminderId: number, notificationId: string) {
@@ -117,7 +193,17 @@ export function getAllReminders() {
   return db.select().from(reminders).orderBy(asc(reminders.scheduledAt)).all();
 }
 
-export function updateReminder(id: number, updates: { message?: string; scheduledAt?: number; completed?: number }) {
+export function updateReminder(
+  id: number,
+  updates: {
+    message?: string;
+    scheduledAt?: number;
+    completed?: number;
+    priority?: number;
+    myDay?: number;
+    tags?: string | null;
+  },
+) {
   db.update(reminders).set(updates).where(eq(reminders.id, id)).run();
 }
 

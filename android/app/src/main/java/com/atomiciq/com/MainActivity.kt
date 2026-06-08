@@ -1,4 +1,4 @@
-package com.whatsappstartchat
+package com.atomiciq.com
 
 import android.os.Build
 import android.os.Bundle

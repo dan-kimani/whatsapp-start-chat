@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Pressable, Text, View, useColorScheme } from "react-native";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
+import { Pressable, Text, View, useColorScheme } from "react-native";
+import { useState } from "react";
 
 interface Props {
   text: string;
@@ -17,7 +17,6 @@ interface Segment {
 // Parse a single line into segments with inline formatting
 function parseLine(line: string): Segment[] {
   const segments: Segment[] = [];
-  let remaining = line;
   const patterns = [
     { regex: /\*(.+?)\*/g, prop: "bold" as const },
     { regex: /_(.+?)_/g, prop: "italic" as const },
@@ -77,73 +76,59 @@ export default function MessagePreview({ text }: Props) {
   const lines = text.split("\n");
 
   return (
-    <View className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-4 py-2 mb-3">
-      <Pressable
-        onPress={() => setExpanded(!expanded)}
-        className="flex-row items-center justify-between py-3 active:opacity-60"
-        hitSlop={8}
-      >
-        <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-          Preview
-        </Text>
+    <View className="mb-3 rounded-xl bg-emerald-50 px-4 py-2 dark:bg-emerald-900/20">
+      <Pressable onPress={() => setExpanded(!expanded)} className="flex-row items-center justify-between py-3 active:opacity-60" hitSlop={8}>
+        <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Preview</Text>
         <View className="flex-row items-center gap-1">
-          <Text className="text-xs text-emerald-600 dark:text-emerald-500">
-            {expanded ? "Hide" : "Show"}
-          </Text>
-          {expanded ? (
-            <ChevronUp size={14} color="#059669" />
-          ) : (
-            <ChevronDown size={14} color="#059669" />
-          )}
+          <Text className="text-xs text-emerald-600 dark:text-emerald-500">{expanded ? "Hide" : "Show"}</Text>
+          {expanded ? <ChevronUp size={14} color="#059669" /> : <ChevronDown size={14} color="#059669" />}
         </View>
       </Pressable>
       {expanded && (
         <View className="pb-2">
-      {lines.map((rawLine, i) => {
-        // Detect line-level formatting
-        let prefix: string | null = null;
-        let line = rawLine;
-        let prefixStyle: object = {};
+          {lines.map((rawLine, _i) => {
+            // Detect line-level formatting
+            let prefix: string | null = null;
+            let line = rawLine;
+            let prefixStyle: object = {};
 
-        if (rawLine.startsWith("* ")) {
-          prefix = "  •  ";
-          line = rawLine.slice(2);
-        } else if (/^\d+\.\s/.test(rawLine)) {
-          const num = rawLine.match(/^(\d+)\.\s/)![1];
-          prefix = `  ${num}.  `;
-          line = rawLine.slice(num.length + 2);
-        } else if (rawLine.startsWith("> ")) {
-          prefix = "│ ";
-          line = rawLine.slice(2);
-          prefixStyle = { color: dimColor };
-        }
+            if (rawLine.startsWith("* ")) {
+              prefix = "  •  ";
+              line = rawLine.slice(2);
+            } else if (/^\d+\.\s/.test(rawLine)) {
+              const num = rawLine.match(/^(\d+)\.\s/)![1];
+              prefix = `  ${num}.  `;
+              line = rawLine.slice(num.length + 2);
+            } else if (rawLine.startsWith("> ")) {
+              prefix = "│ ";
+              line = rawLine.slice(2);
+              prefixStyle = { color: dimColor };
+            }
 
-        const segments = parseLine(line);
+            const segments = parseLine(line);
 
-        return (
-          <Text key={i} className="text-sm leading-6 mb-0.5">
-            {prefix && (
-              <Text style={[{ color: dimColor }, prefixStyle]}>{prefix}</Text>
-            )}
-            {segments.map((seg, j) => {
-              const style: any = { color: baseColor };
-              if (seg.bold) style.fontWeight = "700";
-              if (seg.italic) style.fontStyle = "italic";
-              if (seg.strike) style.textDecorationLine = "line-through";
-              if (seg.mono) {
-                style.fontFamily = "monospace";
-                style.fontSize = 12;
-                style.backgroundColor = isDark ? "#334155" : "#e2e8f0";
-              }
-              return (
-                <Text key={j} style={style}>
-                  {seg.text}
-                </Text>
-              );
-            })}
-          </Text>
-        );
-      })}
+            return (
+              <Text key={`line-${rawLine}`} className="mb-0.5 text-sm leading-6">
+                {prefix && <Text style={[{ color: dimColor }, prefixStyle]}>{prefix}</Text>}
+                {segments.map((seg, _j) => {
+                  const style: any = { color: baseColor };
+                  if (seg.bold) style.fontWeight = "700";
+                  if (seg.italic) style.fontStyle = "italic";
+                  if (seg.strike) style.textDecorationLine = "line-through";
+                  if (seg.mono) {
+                    style.fontFamily = "monospace";
+                    style.fontSize = 12;
+                    style.backgroundColor = isDark ? "#334155" : "#e2e8f0";
+                  }
+                  return (
+                    <Text key={`seg-${seg.text}-${seg.bold}-${seg.italic}-${seg.strike}-${seg.mono}`} style={style}>
+                      {seg.text}
+                    </Text>
+                  );
+                })}
+              </Text>
+            );
+          })}
         </View>
       )}
     </View>

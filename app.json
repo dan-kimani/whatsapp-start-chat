@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "WhatsApp Link",
-    "slug": "whatsapp-start-chat",
+    "name": "Atomic IQ",
+    "slug": "atomiciq",
     "version": "0.0.1",
-    "scheme": "acme",
+    "scheme": "atomiciq",
     "jsEngine": "hermes",
     "userInterfaceStyle": "automatic",
     "orientation": "default",
@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.whatsappstartchat",
+      "package": "com.atomiciq.com",
       "versionCode": 1,
       "permissions": ["READ_CONTACTS", "WRITE_CONTACTS"]
     },
@@ -32,7 +32,7 @@
       [
         "expo-contacts",
         {
-          "contactsPermission": "Allow WhatsApp Link to read your contacts to show names for recent numbers."
+          "contactsPermission": "Allow Atomic IQ to read your contacts to show names for recent numbers."
         }
       ]
     ]

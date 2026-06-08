@@ -1,6 +1,6 @@
+import * as Clipboard from "expo-clipboard";
 import { useState, useEffect, useRef } from "react";
 import { AppState } from "react-native";
-import * as Clipboard from "expo-clipboard";
 
 export function useSmartClipboard(currentRawValue: string) {
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);

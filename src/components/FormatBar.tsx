@@ -1,5 +1,5 @@
-import { Pressable, Text, View } from "react-native";
 import { Bold, Italic, Strikethrough, Code, List, ListOrdered, Quote } from "lucide-react-native";
+import { Pressable, Text, View } from "react-native";
 
 interface FormatBarProps {
   onFormat: (wrapper: string, linePrefix?: boolean) => void;
@@ -20,22 +20,22 @@ const LINE = [
 
 export default function FormatBar({ onFormat }: FormatBarProps) {
   return (
-    <View className="flex-row gap-1 px-4 py-2">
+    <View className="flex-row gap-1 py-2">
       {INLINE.map((f) => (
         <Pressable
           key={f.label}
           onPress={() => onFormat(f.wrapper)}
-          className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg active:bg-gray-200 dark:active:bg-gray-600"
+          className="rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600"
         >
           <f.icon size={16} color="#6b7280" />
         </Pressable>
       ))}
-      <View className="w-px bg-gray-200 dark:bg-gray-600 mx-1" />
+      <View className="mx-1 w-px bg-gray-200 dark:bg-gray-600" />
       {LINE.map((f) => (
         <Pressable
           key={f.label}
           onPress={() => onFormat(f.prefix, true)}
-          className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg active:bg-gray-200 dark:active:bg-gray-600"
+          className="rounded-lg bg-gray-100 px-3 py-2 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600"
         >
           <f.icon size={16} color="#6b7280" />
         </Pressable>

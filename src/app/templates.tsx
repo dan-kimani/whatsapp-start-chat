@@ -1,10 +1,11 @@
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import { ArrowLeft, Plus, X, Copy } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import * as Clipboard from "expo-clipboard";
-import * as Haptics from "expo-haptics";
-import { ArrowLeft, Plus, X, Copy } from "lucide-react-native";
+
 import MessageEditor from "../components/MessageEditor";
 import { useAppStore } from "../store/useAppStore";
 
@@ -20,7 +21,9 @@ export default function TemplatesPage() {
 
   const insets = useSafeAreaInsets();
 
-  useEffect(() => { loadTemplates(); }, []);
+  useEffect(() => {
+    loadTemplates();
+  }, []);
 
   const handleAdd = async () => {
     const t = newText.trim();
@@ -42,27 +45,23 @@ export default function TemplatesPage() {
         <Pressable onPress={() => router.back()} className="p-2">
           <ArrowLeft size={22} color="#6b7280" />
         </Pressable>
-        <Text className="text-lg font-bold flex-1 text-center text-gray-900 dark:text-gray-100">
+        <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
           Quick Responses
         </Text>
         <View style={{ width: 38 }} />
       </View>
 
       {/* Add new */}
-      <View className="px-5 mb-4">
-        <MessageEditor
-          value={newText}
-          onChangeText={setNewText}
-          placeholder="Add a template..."
-        />
+      <View className="mb-4 px-5">
+        <MessageEditor value={newText} onChangeText={setNewText} placeholder="Add a template..." />
         <Pressable
           onPress={handleAdd}
           disabled={!newText.trim()}
-          className="bg-emerald-500 rounded-xl py-4 items-center justify-center mt-2 active:bg-emerald-600"
+          className="mt-2 items-center justify-center rounded-xl bg-emerald-500 py-4 active:bg-emerald-600"
         >
           <View className="flex-row items-center">
             <Plus size={18} color="#fff" />
-            <Text className="text-base font-semibold text-white ml-2">Add Template</Text>
+            <Text className="ml-2 text-base font-semibold text-white">Add Template</Text>
           </View>
         </Pressable>
       </View>
@@ -72,7 +71,7 @@ export default function TemplatesPage() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
         keyExtractor={(t) => String(t.id)}
         renderItem={({ item: t }) => (
-          <View className="flex-row items-center rounded-xl px-4 py-3 mb-2 bg-gray-50 dark:bg-gray-800">
+          <View className="mb-2 flex-row items-center rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800">
             {editId === t.id ? (
               <View className="flex-1">
                 <MessageEditor
@@ -80,10 +79,10 @@ export default function TemplatesPage() {
                   onChangeText={setEditText}
                   placeholder="Edit template..."
                 />
-                <View className="flex-row gap-2 mt-2">
+                <View className="mt-2 flex-row gap-2">
                   <Pressable
                     onPress={() => setEditId(null)}
-                    className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-xl py-2 items-center"
+                    className="flex-1 items-center rounded-xl bg-gray-200 py-2 dark:bg-gray-600"
                   >
                     <Text className="text-sm text-gray-600 dark:text-gray-300">Cancel</Text>
                   </Pressable>
@@ -91,24 +90,25 @@ export default function TemplatesPage() {
                     onPress={() => {
                       if (editText.trim()) {
                         deleteTemplate(t.id);
-                      addTemplate(editText.trim());
+                        addTemplate(editText.trim());
                       }
                       setEditId(null);
                     }}
-                    className="flex-1 bg-emerald-500 rounded-xl py-2 items-center"
+                    className="flex-1 items-center rounded-xl bg-emerald-500 py-2"
                   >
-                    <Text className="text-sm text-white font-semibold">Save</Text>
+                    <Text className="text-sm font-semibold text-white">Save</Text>
                   </Pressable>
                 </View>
               </View>
             ) : (
               <Pressable
-                onPress={() => { setEditId(t.id); setEditText(t.text); }}
+                onPress={() => {
+                  setEditId(t.id);
+                  setEditText(t.text);
+                }}
                 className="flex-1"
               >
-                <Text className="text-base text-gray-900 dark:text-gray-100">
-                  {t.text}
-                </Text>
+                <Text className="text-base text-gray-900 dark:text-gray-100">{t.text}</Text>
               </Pressable>
             )}
             <Pressable

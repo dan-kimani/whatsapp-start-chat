@@ -1,10 +1,10 @@
+import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
+import { useLocalSearchParams, router } from "expo-router";
+import { Plus, X, Check, Circle, SendHorizontal, ArrowLeft, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AppState, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, router } from "expo-router";
-import * as Linking from "expo-linking";
-import * as Haptics from "expo-haptics";
-import { Plus, X, Check, Circle, SendHorizontal, ArrowLeft, Trash2 } from "lucide-react-native";
 
 import MessageEditor from "../../components/MessageEditor";
 import TemplateChips from "../../components/TemplateChips";
@@ -80,7 +80,14 @@ export default function BroadcastDetail() {
   const deleteBroadcast = () => {
     Alert.alert("Delete broadcast?", "This will remove the draft and all contacts.", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => { db.deleteBroadcast(broadcastId); router.back(); } },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          db.deleteBroadcast(broadcastId);
+          router.back();
+        },
+      },
     ]);
   };
 
@@ -105,7 +112,7 @@ export default function BroadcastDetail() {
         <Pressable onPress={() => router.back()} className="p-2">
           <ArrowLeft size={22} className="text-gray-400 dark:text-gray-500" />
         </Pressable>
-        <Text className="text-lg font-bold flex-1 text-center text-gray-900 dark:text-gray-100">
+        <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
           Broadcast
         </Text>
         <Pressable onPress={deleteBroadcast} className="p-2">
@@ -114,37 +121,46 @@ export default function BroadcastDetail() {
       </View>
 
       {contacts.length > 0 && (
-        <View className="px-5 mb-2">
-          <View className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-            <View className="h-full rounded-full bg-emerald-500" style={{ width: `${(sentCount / contacts.length) * 100}%` }} />
+        <View className="mb-2 px-5">
+          <View className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            <View
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: `${(sentCount / contacts.length) * 100}%` }}
+            />
           </View>
-          <Text className="text-xs mt-1 text-right text-gray-400 dark:text-gray-500">
+          <Text className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">
             {sentCount}/{contacts.length} sent
           </Text>
         </View>
       )}
 
-      <View className="px-5 mb-4">
+      <View className="mb-4 px-5">
         <TemplateChips onSelect={saveMessage} />
-        <MessageEditor value={message} onChangeText={saveMessage} placeholder="Broadcast message..." />
+        <MessageEditor
+          value={message}
+          onChangeText={saveMessage}
+          placeholder="Broadcast message..."
+        />
       </View>
 
-      <View className="px-5 mb-3 flex-row items-center gap-2">
-        <Text className="text-base text-gray-400 dark:text-gray-500">
-          {selectedCountry.code}
-        </Text>
+      <View className="mb-3 flex-row items-center gap-2 px-5">
+        <Text className="text-base text-gray-400 dark:text-gray-500">{selectedCountry.code}</Text>
         <TextInput
           value={newNumber}
           onChangeText={setNewNumber}
           placeholder="712 345 678"
           placeholderTextColor="#9ca3af"
           keyboardType="phone-pad"
-          className="flex-1 rounded-xl px-4 py-3 text-base bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="flex-1 rounded-xl bg-gray-50 px-4 py-3 text-base text-gray-900 dark:bg-gray-800 dark:text-gray-100"
           maxLength={20}
           onSubmitEditing={addContact}
           returnKeyType="done"
         />
-        <Pressable onPress={addContact} className="bg-emerald-500 p-3 rounded-xl active:bg-emerald-600" disabled={newNumber.replace(/\D/g, "").length < 9}>
+        <Pressable
+          onPress={addContact}
+          className="rounded-xl bg-emerald-500 p-3 active:bg-emerald-600"
+          disabled={newNumber.replace(/\D/g, "").length < 9}
+        >
           <Plus size={18} color="#fff" />
         </Pressable>
       </View>
@@ -159,17 +175,24 @@ export default function BroadcastDetail() {
           </View>
         }
         renderItem={({ item: c }) => (
-          <View className={`flex-row items-center rounded-xl p-4 mb-2 ${c.sent ? "bg-gray-50 dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-800"}`}>
+          <View
+            className={`mb-2 flex-row items-center rounded-xl p-4 ${c.sent ? "bg-gray-50 dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-800"}`}
+          >
             {c.sent ? <Check size={20} color="#059669" /> : <Circle size={20} color="#9ca3af" />}
-            <View className="flex-1 ml-3">
-              <Text className={`text-base font-semibold ${c.sent ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"}`}>
+            <View className="ml-3 flex-1">
+              <Text
+                className={`text-base font-semibold ${c.sent ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100"}`}
+              >
                 {c.countryCode} {formatPhoneNumber(c.phoneNumber)}
               </Text>
             </View>
             {!c.sent && (
-              <Pressable onPress={() => sendToContact(c)} className="bg-emerald-500 px-4 py-2 rounded-xl active:bg-emerald-600 flex-row items-center">
+              <Pressable
+                onPress={() => sendToContact(c)}
+                className="flex-row items-center rounded-xl bg-emerald-500 px-4 py-2 active:bg-emerald-600"
+              >
                 <SendHorizontal size={14} color="#fff" />
-                <Text className="text-sm font-medium text-white ml-1">Send</Text>
+                <Text className="ml-1 text-sm font-medium text-white">Send</Text>
               </Pressable>
             )}
             <Pressable onPress={() => removeContact(c.id)} className="ml-2 p-2">
@@ -180,19 +203,30 @@ export default function BroadcastDetail() {
       />
 
       {!done && nextContact && (
-        <View className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white dark:bg-gray-950" style={{ paddingBottom: insets.bottom + 8 }}>
-          <Pressable onPress={() => sendToContact(nextContact)} className="bg-emerald-500 rounded-xl py-4 items-center justify-center active:bg-emerald-600 flex-row">
+        <View
+          className="absolute right-0 bottom-0 left-0 bg-white px-5 py-4 dark:bg-gray-950"
+          style={{ paddingBottom: insets.bottom + 8 }}
+        >
+          <Pressable
+            onPress={() => sendToContact(nextContact)}
+            className="flex-row items-center justify-center rounded-xl bg-emerald-500 py-4 active:bg-emerald-600"
+          >
             <SendHorizontal size={18} color="#fff" />
-            <Text className="text-base font-semibold text-white ml-2">Send to next contact</Text>
+            <Text className="ml-2 text-base font-semibold text-white">Send to next contact</Text>
           </Pressable>
         </View>
       )}
 
       {done && (
-        <View className="absolute bottom-0 left-0 right-0 px-5 py-4 bg-white dark:bg-gray-950" style={{ paddingBottom: insets.bottom + 8 }}>
-          <View className="bg-emerald-100 dark:bg-emerald-900/40 rounded-xl p-4 items-center">
+        <View
+          className="absolute right-0 bottom-0 left-0 bg-white px-5 py-4 dark:bg-gray-950"
+          style={{ paddingBottom: insets.bottom + 8 }}
+        >
+          <View className="items-center rounded-xl bg-emerald-100 p-4 dark:bg-emerald-900/40">
             <Check size={24} color="#059669" />
-            <Text className="text-base font-semibold text-emerald-700 dark:text-emerald-400 mt-1">All contacts sent</Text>
+            <Text className="mt-1 text-base font-semibold text-emerald-700 dark:text-emerald-400">
+              All contacts sent
+            </Text>
           </View>
         </View>
       )}

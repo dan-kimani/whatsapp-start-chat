@@ -1,10 +1,11 @@
+import { AlertTriangle, Check, Clipboard, MessageSquarePlus, X } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Clipboard, X, Check, AlertTriangle, MessageSquarePlus } from "lucide-react-native";
+
+import { useSmartClipboard } from "../hooks/useSmartClipboard";
+import { formatPhoneNumber, useAppStore } from "../store/useAppStore";
 import FormatBar, { applyFormat } from "./FormatBar";
 import TemplateChips from "./TemplateChips";
-import { useSmartClipboard } from "../hooks/useSmartClipboard";
-import { useAppStore, formatPhoneNumber } from "../store/useAppStore";
 
 const DIGITS_PER_COUNTRY: Record<string, number> = {
   KE: 9,
@@ -61,32 +62,38 @@ export default function PhoneInput() {
 
   return (
     <>
-      <View className="flex-row justify-between items-end mb-2 ml-1 mr-1">
+      <View className="mr-1 mb-2 ml-1 flex-row items-end justify-between">
         <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300">Phone number</Text>
         {clipboardNumber && (
-          <Pressable onPress={handlePaste} className="bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full flex-row items-center active:bg-gray-200 dark:active:bg-gray-600">
+          <Pressable onPress={handlePaste} className="flex-row items-center rounded-full bg-gray-100 px-3 py-1.5 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600">
             <Clipboard size={12} color="#6b7280" />
-            <Text className="text-xs text-gray-600 dark:text-gray-400 font-medium ml-1 mr-1">Paste</Text>
-            <Text className="text-xs text-gray-500 dark:text-gray-500 font-medium max-w-30" numberOfLines={1}>
+            <Text className="mr-1 ml-1 text-xs font-medium text-gray-600 dark:text-gray-400">Paste</Text>
+            <Text className="max-w-30 text-xs font-medium text-gray-500 dark:text-gray-500" numberOfLines={1}>
               {clipboardNumber}
             </Text>
           </Pressable>
         )}
       </View>
-      <View className={`flex-row items-center bg-gray-50 dark:bg-gray-700 rounded-xl px-4 mb-2 border ${getBorderStyle()}`}>
-        <Text className="text-lg text-gray-400 dark:text-gray-500 mr-2">{selectedCountryCode}</Text>
-        <TextInput value={phoneNumber} onChangeText={setPhoneNumber} placeholder={placeholder} placeholderTextColor="#9CA3AF" keyboardType="phone-pad" className="flex-1 text-lg py-4 text-gray-900 dark:text-white" maxLength={20} />
+      <View className={`mb-2 flex-row items-center rounded-xl border bg-gray-50 px-4 dark:bg-gray-700 ${getBorderStyle()}`}>
+        <Text className="mr-2 text-lg text-gray-400 dark:text-gray-500">{selectedCountryCode}</Text>
+        <TextInput value={phoneNumber} onChangeText={setPhoneNumber} placeholder={placeholder} placeholderTextColor="#9CA3AF" keyboardType="phone-pad" className="flex-1 py-4 text-lg text-gray-900 dark:text-white" maxLength={20} />
         {phoneNumber.length > 0 && (
-          <Pressable onPress={() => { setPhoneNumber(""); setShowMessage(false); }} className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full items-center justify-center active:bg-gray-400 dark:active:bg-gray-500">
+          <Pressable
+            onPress={() => {
+              setPhoneNumber("");
+              setShowMessage(false);
+            }}
+            className="h-6 w-6 items-center justify-center rounded-full bg-gray-300 active:bg-gray-400 dark:bg-gray-600 dark:active:bg-gray-500"
+          >
             <X size={14} color="#fff" strokeWidth={3} />
           </Pressable>
         )}
       </View>
       {rawPhoneNumber.length > 0 && (
-        <View className="flex-row justify-between items-center px-2 mb-2">
+        <View className="mb-2 flex-row items-center justify-between px-2">
           <View className="flex-row items-center">
             {isValid ? <Check size={14} color="#059669" strokeWidth={3} /> : <AlertTriangle size={14} color="#ef4444" strokeWidth={3} />}
-            <Text className={`text-sm ml-1 ${isValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>{isValid ? "Ready" : "Too short"}</Text>
+            <Text className={`ml-1 text-sm ${isValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>{isValid ? "Ready" : "Too short"}</Text>
           </View>
           <Text className="text-sm text-gray-400 dark:text-gray-500">{rawPhoneNumber.length} / 15</Text>
         </View>
@@ -94,9 +101,9 @@ export default function PhoneInput() {
 
       {/* Message pre-fill */}
       {isValid && !showMessage && (
-        <Pressable onPress={() => setShowMessage(true)} className="flex-row items-center mb-6 px-1 py-4">
+        <Pressable onPress={() => setShowMessage(true)} className="mb-6 flex-row items-center px-1 py-4">
           <MessageSquarePlus size={16} color="#6b7280" />
-          <Text className="text-sm text-gray-400 dark:text-gray-500 ml-2">Add a message</Text>
+          <Text className="ml-2 text-sm text-gray-400 dark:text-gray-500">Add a message</Text>
         </Pressable>
       )}
       {isValid && showMessage && (
@@ -111,16 +118,18 @@ export default function PhoneInput() {
           <TextInput
             value={messageText}
             onChangeText={setMessageText}
-            onSelectionChange={(e) => { msgSelection.current = e.nativeEvent.selection; }}
+            onSelectionChange={(e) => {
+              msgSelection.current = e.nativeEvent.selection;
+            }}
             placeholder="Type a message to send..."
             placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={3}
-            className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 text-base text-gray-900 dark:text-white"
+            className="rounded-xl bg-gray-50 px-4 py-3 text-base text-gray-900 dark:bg-gray-700 dark:text-white"
             style={{ minHeight: 60, textAlignVertical: "top" }}
             maxLength={500}
           />
-          <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{messageText.length}/500</Text>
+          <Text className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{messageText.length}/500</Text>
         </View>
       )}
     </>

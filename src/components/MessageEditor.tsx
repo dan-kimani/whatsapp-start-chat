@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { TextInput, View, useColorScheme } from "react-native";
+
 import FormatBar, { applyFormat } from "./FormatBar";
 import MessagePreview from "./MessagePreview";
 
@@ -24,7 +25,9 @@ export default function MessageEditor({ value, onChangeText, placeholder = "Mess
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        onSelectionChange={(e) => { selection.current = e.nativeEvent.selection; }}
+        onSelectionChange={(e) => {
+          selection.current = e.nativeEvent.selection;
+        }}
         placeholder={placeholder}
         placeholderTextColor={isDark ? "#94a3b8" : "#9ca3af"}
         multiline

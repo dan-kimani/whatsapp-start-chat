@@ -50,5 +50,8 @@ export const reminders = sqliteTable("reminders", {
   scheduledAt: integer("scheduled_at").notNull(),
   notificationId: text("notification_id"),
   completed: integer("completed").notNull().default(0),
+  priority: integer("priority").notNull().default(0),
+  myDay: integer("my_day").notNull().default(0),
+  tags: text("tags"),
   createdAt: integer("created_at").notNull(),
 });

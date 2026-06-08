@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-start-chat",
+  "name": "atomiciq",
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
@@ -8,8 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:android": "eas build -p android --profile apk --local --output ./build/whatsapp-link-go.apk",
-    "build:android:aab": "eas build -p android --profile aab --local --output ./build/whatsapp-link-go.aab",
+    "build:android": "eas build -p android --profile apk --local --output ./build/atomiciq.apk",
+    "build:android:aab": "eas build -p android --profile aab --local --output ./build/atomiciq.aab",
     "install:aab": "./scripts/install-aab.sh",
     "build:ios": "eas build -p ios --local",
     "build:android:release": "eas build -p android",

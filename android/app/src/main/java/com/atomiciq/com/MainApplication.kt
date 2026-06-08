@@ -1,4 +1,4 @@
-package com.whatsappstartchat
+package com.atomiciq.com
 
 import android.app.Application
 import android.content.res.Configuration

@@ -1,12 +1,13 @@
-import { create } from "zustand";
-import { Platform } from "react-native";
-import * as Linking from "expo-linking";
+import * as Contacts from "expo-contacts/legacy";
 import * as Haptics from "expo-haptics";
 import * as IntentLauncher from "expo-intent-launcher";
-import * as Contacts from "expo-contacts/legacy";
-import * as db from "../db";
+import * as Linking from "expo-linking";
+import { Platform } from "react-native";
 import { getAllCountries, FlagType } from "react-native-country-picker-modal";
 import type { Country as PickerCountry } from "react-native-country-picker-modal";
+import { create } from "zustand";
+
+import * as db from "../db";
 
 // Cache for countries data — preloaded on import, sorted once by calling code length
 let countriesCache: PickerCountry[] | null = null;
@@ -128,7 +129,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setPhoneNumber: (phone) => {
     const cleaned = phone.replace(/\D/g, "");
-    const looksInternational = phone.startsWith("+") || cleaned.length > 10;
+    const looksInternational = phone.startsWith("+");
 
     if (cleaned.length > 0 && looksInternational) {
       // Try synchronous detection first (cache is preloaded on import)
@@ -213,7 +214,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Save to recent contacts
     try {
-      await db.saveContact(rawPhoneNumber, selectedCountry.code, selectedCountry.country, selectedCountry.flag);
+      await db.saveContact(
+        rawPhoneNumber,
+        selectedCountry.code,
+        selectedCountry.country,
+        selectedCountry.flag,
+      );
       await get().loadRecentContacts();
     } catch (error) {
       console.error("Failed to save recent contact:", error);
@@ -234,7 +240,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const fullNumber = `+${digits}`;
 
     try {
-      await db.saveContact(rawPhoneNumber, selectedCountry.code, selectedCountry.country, selectedCountry.flag);
+      await db.saveContact(
+        rawPhoneNumber,
+        selectedCountry.code,
+        selectedCountry.country,
+        selectedCountry.flag,
+      );
       get().loadRecentContacts();
     } catch (error) {
       console.error("Failed to save recent contact:", error);
@@ -247,7 +258,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   openDialer: (countryCode, phoneNumber) => {
     const digits = `${countryCode}${phoneNumber}`.replace(/\D/g, "");
     const country = findCountryByCallingCode(countryCode);
-    db.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "").catch(() => {});
+    db.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "").catch(
+      () => {},
+    );
     Linking.openURL(`tel:+${digits}`);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },
@@ -255,7 +268,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   openWhatsApp: (countryCode, phoneNumber) => {
     const digits = `${countryCode}${phoneNumber}`.replace(/\D/g, "");
     const country = findCountryByCallingCode(countryCode);
-    db.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "").catch(() => {});
+    db.saveContact(phoneNumber, countryCode, country?.cca2 ?? "", country?.flag ?? "").catch(
+      () => {},
+    );
     Linking.openURL(`whatsapp://send?phone=+${digits}`);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   },

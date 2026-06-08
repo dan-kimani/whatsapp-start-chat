@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0522ae54-5e12-462c-9583-0da4ea113185",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b9f21467-341a-4c16-a536-e05070034a5b",
+  "prevId": "0522ae54-5e12-462c-9583-0da4ea113185",
   "tables": {
     "broadcast_contacts": {
       "name": "broadcast_contacts",
@@ -47,7 +47,9 @@
       "indexes": {
         "idx_broadcast_id": {
           "name": "idx_broadcast_id",
-          "columns": ["broadcast_id"],
+          "columns": [
+            "broadcast_id"
+          ],
           "isUnique": false
         }
       },
@@ -56,8 +58,12 @@
           "name": "broadcast_contacts_broadcast_id_broadcasts_id_fk",
           "tableFrom": "broadcast_contacts",
           "tableTo": "broadcasts",
-          "columnsFrom": ["broadcast_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "broadcast_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -179,12 +185,16 @@
       "indexes": {
         "idx_phone_number": {
           "name": "idx_phone_number",
-          "columns": ["phone_number"],
+          "columns": [
+            "phone_number"
+          ],
           "isUnique": false
         },
         "idx_used_at": {
           "name": "idx_used_at",
-          "columns": ["used_at"],
+          "columns": [
+            "used_at"
+          ],
           "isUnique": false
         }
       },
@@ -246,6 +256,29 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "priority": {
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "my_day": {
+          "name": "my_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",

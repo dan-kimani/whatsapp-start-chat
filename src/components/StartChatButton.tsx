@@ -1,5 +1,6 @@
-import { Pressable, Text, View } from "react-native";
 import { Phone, MessageCircle } from "lucide-react-native";
+import { Pressable, Text, View } from "react-native";
+
 import { useAppStore } from "../store/useAppStore";
 
 interface StartChatButtonProps {
@@ -15,11 +16,13 @@ export default function StartChatButton({ isValid }: StartChatButtonProps) {
       <Pressable
         onPress={startCall}
         disabled={!isValid}
-        className={`flex-1 rounded-xl py-4 items-center justify-center ${isValid ? "bg-gray-500 active:bg-gray-600" : "bg-gray-200 dark:bg-gray-700"}`}
+        className={`flex-1 items-center justify-center rounded-xl py-4 ${isValid ? "bg-gray-500 active:bg-gray-600" : "bg-gray-200 dark:bg-gray-700"}`}
       >
         <View className="flex-row items-center justify-center">
           <Phone size={18} color={isValid ? "#fff" : "#9ca3af"} strokeWidth={2.5} />
-          <Text className={`text-base font-semibold ml-2 ${isValid ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
+          <Text
+            className={`ml-2 text-base font-semibold ${isValid ? "text-white" : "text-gray-400 dark:text-gray-500"}`}
+          >
             Call
           </Text>
         </View>
@@ -28,11 +31,13 @@ export default function StartChatButton({ isValid }: StartChatButtonProps) {
       <Pressable
         onPress={startChat}
         disabled={!isValid}
-        className={`flex-1 rounded-xl py-4 items-center justify-center ${isValid ? "bg-emerald-500 active:bg-emerald-600" : "bg-gray-200 dark:bg-gray-700"}`}
+        className={`flex-1 items-center justify-center rounded-xl py-4 ${isValid ? "bg-emerald-500 active:bg-emerald-600" : "bg-gray-200 dark:bg-gray-700"}`}
       >
         <View className="flex-row items-center justify-center">
           <MessageCircle size={18} color={isValid ? "#fff" : "#9ca3af"} strokeWidth={2.5} />
-          <Text className={`text-base font-semibold ml-2 ${isValid ? "text-white" : "text-gray-400 dark:text-gray-500"}`}>
+          <Text
+            className={`ml-2 text-base font-semibold ${isValid ? "text-white" : "text-gray-400 dark:text-gray-500"}`}
+          >
             WhatsApp
           </Text>
         </View>

@@ -1,14 +1,14 @@
 import "../global.css";
 
-import { useEffect } from "react";
-import { Slot } from "expo-router";
+import { Host } from "@expo/ui";
+import * as Linking from "expo-linking";
+import * as Notifications from "expo-notifications";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Host } from "@expo/ui";
 import Toast from "react-native-toast-message";
-import * as Notifications from "expo-notifications";
-import * as Linking from "expo-linking";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -34,14 +34,20 @@ export default function Layout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Host style={{ flex: 1 }} useViewportSizeMeasurement>
+    <Host style={{ flex: 1 }} useViewportSizeMeasurement matchContents>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-white dark:bg-gray-950">
           <StatusBar style="auto" />
-          <Slot />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: "default",
+              contentStyle: { backgroundColor: "transparent" },
+            }}
+          />
           <Toast />
         </View>
-      </Host>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </Host>
   );
 }

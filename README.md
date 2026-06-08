@@ -1,4 +1,4 @@
-# WhatsApp Link 💬
+# Atomic IQ 💬
 
 A fast, lightweight React Native app to start WhatsApp chats without saving the phone number to your contacts first. Built with **Expo**, **NativeWind (Uniwind)**, and **SQLite**.
 
@@ -50,8 +50,8 @@ A fast, lightweight React Native app to start WhatsApp chats without saving the 
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/dannysofftie/whatsapp-start-chat.git
-   cd whatsapp-start-chat
+   git clone https://github.com/dannysofftie/atomiciq.git
+   cd atomiciq
    ```
 
 2. **Install dependencies**
@@ -85,7 +85,7 @@ To build a standalone APK that can be installed directly on an Android device:
 yarn build:android
 ```
 
-This will generate `build/whatsapp-link-go.apk`. You can transfer this file to your phone and install it.
+This will generate `build/atomiciq.apk`. You can transfer this file to your phone and install it.
 
 ### Android App Bundle (Play Store)
 
@@ -95,7 +95,7 @@ To build an `.aab` file for Google Play Store testing/release:
 yarn build:android:aab
 ```
 
-This will generate `build/whatsapp-link-go.aab`.
+This will generate `build/atomiciq.aab`.
 
 ---
 

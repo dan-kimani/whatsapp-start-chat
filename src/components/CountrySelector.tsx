@@ -1,3 +1,4 @@
+import { ChevronDown, Search } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -12,10 +13,9 @@ import {
   useColorScheme,
   useWindowDimensions,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CountryFlag from "react-native-country-flag";
-import { ChevronDown, Search } from "lucide-react-native";
 import type { Country as PickerCountry, CountryCode } from "react-native-country-picker-modal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppStore, loadCountries } from "../store/useAppStore";
 
@@ -35,18 +35,20 @@ export function CountrySelector() {
 
   return (
     <>
-      <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2 ml-1">Country</Text>
+      <Text className="mb-2 ml-1 text-sm font-semibold text-gray-600 dark:text-gray-300">
+        Country
+      </Text>
       <Pressable
         onPress={() => setOpen(true)}
-        className="bg-gray-50 dark:bg-gray-700 rounded-xl mb-5 active:bg-gray-100 dark:active:bg-gray-600 overflow-hidden"
+        className="mb-5 overflow-hidden rounded-xl bg-gray-50 active:bg-gray-100 dark:bg-gray-700 dark:active:bg-gray-600"
       >
-        <View className="flex-row items-center px-4 py-4 w-full">
+        <View className="w-full flex-row items-center px-4 py-4">
           <CountryFlag isoCode={selectedCountry.country as CountryCode} size={24} />
-          <Text className="ml-2 mr-1 text-lg font-semibold text-gray-800 dark:text-white">
+          <Text className="mr-1 ml-2 text-lg font-semibold text-gray-800 dark:text-white">
             {selectedCountry.code}
           </Text>
           <ChevronDown size={18} color={isDark ? "#9ca3af" : "#6b7280"} />
-          <Text className="text-gray-400 dark:text-gray-500 ml-2 text-sm">
+          <Text className="ml-2 text-sm text-gray-400 dark:text-gray-500">
             ({selectedCountry.country})
           </Text>
         </View>
@@ -86,7 +88,13 @@ export function CountryPickerSheet() {
       backdrop.setValue(0);
       requestAnimationFrame(() => {
         Animated.parallel([
-          Animated.spring(translateY, { toValue: 0, damping: 22, stiffness: 200, mass: 0.8, useNativeDriver: true }),
+          Animated.spring(translateY, {
+            toValue: 0,
+            damping: 22,
+            stiffness: 200,
+            mass: 0.8,
+            useNativeDriver: true,
+          }),
           Animated.timing(backdrop, { toValue: 1, duration: 250, useNativeDriver: true }),
         ]).start();
         setTimeout(() => searchRef.current?.focus(), 350);
@@ -140,11 +148,19 @@ export function CountryPickerSheet() {
   if (!isOpen) return null;
 
   return (
-    <Modal visible animationType="none" transparent statusBarTranslucent={false} onRequestClose={close}>
+    <Modal
+      visible
+      animationType="none"
+      transparent
+      statusBarTranslucent={false}
+      onRequestClose={close}
+    >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Backdrop */}
-      <Animated.View style={[{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }, { opacity: backdrop }]}>
+      <Animated.View
+        style={[{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }, { opacity: backdrop }]}
+      >
         <Pressable style={{ flex: 1 }} onPress={close} />
       </Animated.View>
 
@@ -152,10 +168,14 @@ export function CountryPickerSheet() {
       <Animated.View
         style={[
           {
-            position: "absolute", bottom: 0, left: 0, right: 0,
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
             height: sheetHeight + insets.bottom,
             backgroundColor: bg,
-            borderTopLeftRadius: 20, borderTopRightRadius: 20,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
             paddingBottom: insets.bottom,
           },
           { transform: [{ translateY }] },
@@ -163,12 +183,22 @@ export function CountryPickerSheet() {
       >
         {/* Drag handle */}
         <View className="items-center pt-3 pb-1">
-          <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: isDark ? "#4b5563" : "#d1d5db" }} />
+          <View
+            style={{
+              width: 36,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: isDark ? "#4b5563" : "#d1d5db",
+            }}
+          />
         </View>
 
         {/* Search */}
         <View className="px-4 pt-2 pb-3">
-          <View className="flex-row items-center rounded-xl px-3 py-2.5" style={{ backgroundColor: surfaceBg }}>
+          <View
+            className="flex-row items-center rounded-xl px-3 py-2.5"
+            style={{ backgroundColor: surfaceBg }}
+          >
             <Search size={18} color={mutedColor} />
             <TextInput
               ref={searchRef}
@@ -176,7 +206,7 @@ export function CountryPickerSheet() {
               onChangeText={setQuery}
               placeholder="Search country"
               placeholderTextColor={mutedColor}
-              className="flex-1 ml-2 text-base"
+              className="ml-2 flex-1 text-base"
               style={{ color: textColor }}
               clearButtonMode="while-editing"
               returnKeyType="done"
@@ -201,7 +231,10 @@ export function CountryPickerSheet() {
           initialScrollIndex={selectedIndex > 0 ? selectedIndex : 0}
           onScrollToIndexFailed={() => {
             if (selectedIndex > 0 && selectedIndex < filtered.length) {
-              setTimeout(() => listRef.current?.scrollToIndex({ index: selectedIndex, animated: false }), 100);
+              setTimeout(
+                () => listRef.current?.scrollToIndex({ index: selectedIndex, animated: false }),
+                100,
+              );
             }
           }}
           renderItem={({ item }) => {
@@ -213,15 +246,15 @@ export function CountryPickerSheet() {
                 className="flex-row items-center px-4"
               >
                 <CountryFlag isoCode={item.cca2} size={22} />
-                <View className="flex-1 ml-3">
+                <View className="ml-3 flex-1">
                   <Text className="text-base" style={{ color: textColor }} numberOfLines={1}>
                     {getCountryName(item)}
                   </Text>
                 </View>
-                <Text className="text-sm ml-2" style={{ color: mutedColor }}>
+                <Text className="ml-2 text-sm" style={{ color: mutedColor }}>
                   +{item.callingCode?.[0]}
                 </Text>
-                {active && <View className="ml-2 w-3 h-3 rounded-full bg-emerald-500" />}
+                {active && <View className="ml-2 h-3 w-3 rounded-full bg-emerald-500" />}
               </Pressable>
             );
           }}

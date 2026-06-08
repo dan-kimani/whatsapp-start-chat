@@ -1,10 +1,11 @@
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import { migrate } from "drizzle-orm/expo-sqlite/migrator";
-import { openDatabaseSync } from "expo-sqlite";
 import * as schema from "./schema";
 import migrations from "./migrations/migrations";
 
-const sqlite = openDatabaseSync("whatsapp_quick_chat.db");
+import { drizzle } from "drizzle-orm/expo-sqlite";
+import { migrate } from "drizzle-orm/expo-sqlite/migrator";
+import { openDatabaseSync } from "expo-sqlite";
+
+const sqlite = openDatabaseSync("atomiciq.db");
 
 sqlite.execSync("PRAGMA journal_mode = WAL");
 sqlite.execSync("PRAGMA foreign_keys = ON");
