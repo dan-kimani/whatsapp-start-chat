@@ -1,10 +1,10 @@
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { Plus, X, Copy } from "lucide-react-native";
+import { Copy, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, useColorScheme } from "react-native";
 
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore } from "../../store/useAppStore";
 
 interface Props {
   onSelect: (text: string) => void;

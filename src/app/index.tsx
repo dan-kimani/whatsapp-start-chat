@@ -3,10 +3,11 @@ import { useEffect } from "react";
 import { Keyboard, View } from "react-native";
 
 import AppHeader from "../components/AppHeader";
-import { CountrySelector, CountryPickerSheet } from "../components/CountrySelector";
-import PhoneInput from "../components/PhoneInput";
-import RecentContactsList from "../components/RecentContactsList";
-import StartChatButton from "../components/StartChatButton";
+import RecentContactsList from "../components/Contacts/RecentContactsList";
+import CountryPickerSheet from "../components/Country/CountryPickerSheet";
+import CountryTrigger from "../components/Country/CountryTrigger";
+import PhoneInput from "../components/Phone/PhoneInput";
+import StartChatButton from "../components/Phone/StartChatButton";
 import { useAppStore } from "../store/useAppStore";
 
 export default function App() {
@@ -24,13 +25,19 @@ export default function App() {
 
       <View className="px-5">
         <View className="mb-4 rounded-2xl bg-gray-50 p-5 dark:bg-gray-950">
-          <CountrySelector />
+          <CountryTrigger />
           <PhoneInput />
           <StartChatButton isValid={isValidNumber} />
         </View>
       </View>
 
-      <View className="flex-1" onStartShouldSetResponder={() => { Keyboard.dismiss(); return false; }}>
+      <View
+        className="flex-1"
+        onStartShouldSetResponder={() => {
+          Keyboard.dismiss();
+          return false;
+        }}
+      >
         <RecentContactsList />
       </View>
 

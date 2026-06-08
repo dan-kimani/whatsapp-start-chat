@@ -2,10 +2,10 @@ import { AlertTriangle, Check, Clipboard, MessageSquarePlus, X } from "lucide-re
 import { useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
-import { useSmartClipboard } from "../hooks/useSmartClipboard";
-import { formatPhoneNumber, useAppStore } from "../store/useAppStore";
-import FormatBar, { applyFormat } from "./FormatBar";
-import TemplateChips from "./TemplateChips";
+import { useSmartClipboard } from "../../hooks/useSmartClipboard";
+import { formatPhoneNumber, useAppStore } from "../../store/useAppStore";
+import FormatBar, { applyFormat } from "../Message/FormatBar";
+import TemplateChips from "../Templates/TemplateChips";
 
 const DIGITS_PER_COUNTRY: Record<string, number> = {
   KE: 9,
@@ -57,7 +57,9 @@ export default function PhoneInput() {
 
   const getBorderStyle = () => {
     if (rawPhoneNumber.length === 0) return "border-gray-200 dark:border-gray-600";
-    return isValid ? "border-emerald-400 dark:border-emerald-500" : "border-red-400 dark:border-red-500";
+    return isValid
+      ? "border-emerald-400 dark:border-emerald-500"
+      : "border-red-400 dark:border-red-500";
   };
 
   return (
@@ -65,18 +67,36 @@ export default function PhoneInput() {
       <View className="mr-1 mb-2 ml-1 flex-row items-end justify-between">
         <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300">Phone number</Text>
         {clipboardNumber && (
-          <Pressable onPress={handlePaste} className="flex-row items-center rounded-full bg-gray-100 px-3 py-1.5 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600">
+          <Pressable
+            onPress={handlePaste}
+            className="flex-row items-center rounded-full bg-gray-100 px-3 py-1.5 active:bg-gray-200 dark:bg-gray-700 dark:active:bg-gray-600"
+          >
             <Clipboard size={12} color="#6b7280" />
-            <Text className="mr-1 ml-1 text-xs font-medium text-gray-600 dark:text-gray-400">Paste</Text>
-            <Text className="max-w-30 text-xs font-medium text-gray-500 dark:text-gray-500" numberOfLines={1}>
+            <Text className="mr-1 ml-1 text-xs font-medium text-gray-600 dark:text-gray-400">
+              Paste
+            </Text>
+            <Text
+              className="max-w-30 text-xs font-medium text-gray-500 dark:text-gray-500"
+              numberOfLines={1}
+            >
               {clipboardNumber}
             </Text>
           </Pressable>
         )}
       </View>
-      <View className={`mb-2 flex-row items-center rounded-xl border bg-gray-50 px-4 dark:bg-gray-700 ${getBorderStyle()}`}>
+      <View
+        className={`mb-2 flex-row items-center rounded-xl border bg-gray-50 px-4 dark:bg-gray-700 ${getBorderStyle()}`}
+      >
         <Text className="mr-2 text-lg text-gray-400 dark:text-gray-500">{selectedCountryCode}</Text>
-        <TextInput value={phoneNumber} onChangeText={setPhoneNumber} placeholder={placeholder} placeholderTextColor="#9CA3AF" keyboardType="phone-pad" className="flex-1 py-4 text-lg text-gray-900 dark:text-white" maxLength={20} />
+        <TextInput
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          keyboardType="phone-pad"
+          className="flex-1 py-4 text-lg text-gray-900 dark:text-white"
+          maxLength={20}
+        />
         {phoneNumber.length > 0 && (
           <Pressable
             onPress={() => {
@@ -92,16 +112,29 @@ export default function PhoneInput() {
       {rawPhoneNumber.length > 0 && (
         <View className="mb-2 flex-row items-center justify-between px-2">
           <View className="flex-row items-center">
-            {isValid ? <Check size={14} color="#059669" strokeWidth={3} /> : <AlertTriangle size={14} color="#ef4444" strokeWidth={3} />}
-            <Text className={`ml-1 text-sm ${isValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>{isValid ? "Ready" : "Too short"}</Text>
+            {isValid ? (
+              <Check size={14} color="#059669" strokeWidth={3} />
+            ) : (
+              <AlertTriangle size={14} color="#ef4444" strokeWidth={3} />
+            )}
+            <Text
+              className={`ml-1 text-sm ${isValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}
+            >
+              {isValid ? "Ready" : "Too short"}
+            </Text>
           </View>
-          <Text className="text-sm text-gray-400 dark:text-gray-500">{rawPhoneNumber.length} / 15</Text>
+          <Text className="text-sm text-gray-400 dark:text-gray-500">
+            {rawPhoneNumber.length} / 15
+          </Text>
         </View>
       )}
 
       {/* Message pre-fill */}
       {isValid && !showMessage && (
-        <Pressable onPress={() => setShowMessage(true)} className="mb-6 flex-row items-center px-1 py-4">
+        <Pressable
+          onPress={() => setShowMessage(true)}
+          className="mb-6 flex-row items-center px-1 py-4"
+        >
           <MessageSquarePlus size={16} color="#6b7280" />
           <Text className="ml-2 text-sm text-gray-400 dark:text-gray-500">Add a message</Text>
         </Pressable>
@@ -129,7 +162,9 @@ export default function PhoneInput() {
             style={{ minHeight: 60, textAlignVertical: "top" }}
             maxLength={500}
           />
-          <Text className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{messageText.length}/500</Text>
+          <Text className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">
+            {messageText.length}/500
+          </Text>
         </View>
       )}
     </>

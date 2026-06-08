@@ -1,4 +1,4 @@
-import { ChevronDown, Search } from "lucide-react-native";
+import { Search } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -14,10 +14,10 @@ import {
   useWindowDimensions,
 } from "react-native";
 import CountryFlag from "react-native-country-flag";
-import type { Country as PickerCountry, CountryCode } from "react-native-country-picker-modal";
+import type { Country as PickerCountry } from "react-native-country-picker-modal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAppStore, loadCountries } from "../store/useAppStore";
+import { loadCountries, useAppStore } from "../../store/useAppStore";
 
 const ROW_HEIGHT = 52;
 const SHEET_RATIO = 0.75;
@@ -27,38 +27,7 @@ function getCountryName(country: PickerCountry): string {
   return country.name.common || Object.values(country.name)[0] || country.cca2;
 }
 
-/** Trigger button — renders inside the ScrollView */
-export function CountrySelector() {
-  const selectedCountry = useAppStore((s) => s.selectedCountry);
-  const setOpen = useAppStore((s) => s.setCountryPickerOpen);
-  const isDark = useColorScheme() === "dark";
-
-  return (
-    <>
-      <Text className="mb-2 ml-1 text-sm font-semibold text-gray-600 dark:text-gray-300">
-        Country
-      </Text>
-      <Pressable
-        onPress={() => setOpen(true)}
-        className="mb-5 overflow-hidden rounded-xl bg-gray-50 active:bg-gray-100 dark:bg-gray-700 dark:active:bg-gray-600"
-      >
-        <View className="w-full flex-row items-center px-4 py-4">
-          <CountryFlag isoCode={selectedCountry.country as CountryCode} size={24} />
-          <Text className="mr-1 ml-2 text-lg font-semibold text-gray-800 dark:text-white">
-            {selectedCountry.code}
-          </Text>
-          <ChevronDown size={18} color={isDark ? "#9ca3af" : "#6b7280"} />
-          <Text className="ml-2 text-sm text-gray-400 dark:text-gray-500">
-            ({selectedCountry.country})
-          </Text>
-        </View>
-      </Pressable>
-    </>
-  );
-}
-
-/** Animated bottom sheet — rendered outside the ScrollView */
-export function CountryPickerSheet() {
+export default function CountryPickerSheet() {
   const selectedCountry = useAppStore((s) => s.selectedCountry);
   const setSelectedCountry = useAppStore((s) => s.setSelectedCountry);
   const isOpen = useAppStore((s) => s.isCountryPickerOpen);
@@ -81,7 +50,6 @@ export function CountryPickerSheet() {
     loadCountries().then(setCountries);
   }, []);
 
-  // Animate in/out
   useEffect(() => {
     if (isOpen) {
       translateY.setValue(sheetHeight);
@@ -137,7 +105,6 @@ export function CountryPickerSheet() {
     [filtered, selectedCountry.country],
   );
 
-  // Colors
   const bg = isDark ? "#1f2937" : "#ffffff";
   const surfaceBg = isDark ? "#374151" : "#f3f4f6";
   const textColor = isDark ? "#f9fafb" : "#111827";
@@ -150,21 +117,17 @@ export function CountryPickerSheet() {
   return (
     <Modal
       visible
-      animationType="none"
       transparent
+      animationType="none"
       statusBarTranslucent={false}
       onRequestClose={close}
     >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-
-      {/* Backdrop */}
       <Animated.View
         style={[{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }, { opacity: backdrop }]}
       >
         <Pressable style={{ flex: 1 }} onPress={close} />
       </Animated.View>
-
-      {/* Sheet */}
       <Animated.View
         style={[
           {
@@ -181,7 +144,6 @@ export function CountryPickerSheet() {
           { transform: [{ translateY }] },
         ]}
       >
-        {/* Drag handle */}
         <View className="items-center pt-3 pb-1">
           <View
             style={{
@@ -192,8 +154,6 @@ export function CountryPickerSheet() {
             }}
           />
         </View>
-
-        {/* Search */}
         <View className="px-4 pt-2 pb-3">
           <View
             className="flex-row items-center rounded-xl px-3 py-2.5"
@@ -214,10 +174,7 @@ export function CountryPickerSheet() {
             />
           </View>
         </View>
-
         <View style={{ height: 1, backgroundColor: sep }} />
-
-        {/* Country list */}
         <FlatList
           key={countries.length > 0 ? "loaded" : "loading"}
           ref={listRef}

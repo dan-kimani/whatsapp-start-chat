@@ -1,5 +1,5 @@
-import { Bold, Italic, Strikethrough, Code, List, ListOrdered, Quote } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Bold, Code, Italic, List, ListOrdered, Quote, Strikethrough } from "lucide-react-native";
+import { Pressable, View } from "react-native";
 
 interface FormatBarProps {
   onFormat: (wrapper: string, linePrefix?: boolean) => void;

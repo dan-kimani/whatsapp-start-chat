@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from "lucide-react-native";
-import { Pressable, Text, View, useColorScheme } from "react-native";
 import { useState } from "react";
+import { Pressable, Text, View, useColorScheme } from "react-native";
 
 interface Props {
   text: string;
@@ -77,11 +77,23 @@ export default function MessagePreview({ text }: Props) {
 
   return (
     <View className="mb-3 rounded-xl bg-emerald-50 px-4 py-2 dark:bg-emerald-900/20">
-      <Pressable onPress={() => setExpanded(!expanded)} className="flex-row items-center justify-between py-3 active:opacity-60" hitSlop={8}>
-        <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Preview</Text>
+      <Pressable
+        onPress={() => setExpanded(!expanded)}
+        className="flex-row items-center justify-between py-3 active:opacity-60"
+        hitSlop={8}
+      >
+        <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+          Preview
+        </Text>
         <View className="flex-row items-center gap-1">
-          <Text className="text-xs text-emerald-600 dark:text-emerald-500">{expanded ? "Hide" : "Show"}</Text>
-          {expanded ? <ChevronUp size={14} color="#059669" /> : <ChevronDown size={14} color="#059669" />}
+          <Text className="text-xs text-emerald-600 dark:text-emerald-500">
+            {expanded ? "Hide" : "Show"}
+          </Text>
+          {expanded ? (
+            <ChevronUp size={14} color="#059669" />
+          ) : (
+            <ChevronDown size={14} color="#059669" />
+          )}
         </View>
       </Pressable>
       {expanded && (
@@ -121,7 +133,10 @@ export default function MessagePreview({ text }: Props) {
                     style.backgroundColor = isDark ? "#334155" : "#e2e8f0";
                   }
                   return (
-                    <Text key={`seg-${seg.text}-${seg.bold}-${seg.italic}-${seg.strike}-${seg.mono}`} style={style}>
+                    <Text
+                      key={`seg-${seg.text}-${seg.bold}-${seg.italic}-${seg.strike}-${seg.mono}`}
+                      style={style}
+                    >
                       {seg.text}
                     </Text>
                   );

@@ -1,7 +1,7 @@
-import { Phone, MessageCircle } from "lucide-react-native";
+import { MessageCircle, Phone } from "lucide-react-native";
 import { Pressable, Text, View } from "react-native";
 
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore } from "../../store/useAppStore";
 
 interface StartChatButtonProps {
   isValid: boolean;
