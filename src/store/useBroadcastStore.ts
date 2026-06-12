@@ -1,8 +1,8 @@
-import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { create } from "zustand";
 
 import * as db from "../db";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../lib/haptics";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ export const useBroadcastStore = create<BroadcastStore>((set, get) => ({
     const msgParam = message.trim() ? `&text=${encodeURIComponent(message.trim())}` : "";
     Linking.openURL(`whatsapp://send?phone=+${digits}${msgParam}`);
     db.markBroadcastContactSent(contact.id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
     // Reload to reflect sent status
     const { broadcastId } = get();
     if (broadcastId !== null) {

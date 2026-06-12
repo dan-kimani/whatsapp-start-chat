@@ -1,13 +1,14 @@
 import * as Contacts from "expo-contacts/legacy";
-import * as Haptics from "expo-haptics";
 import * as IntentLauncher from "expo-intent-launcher";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
+import { Uniwind } from "uniwind";
 import { FlagType, getAllCountries } from "react-native-country-picker-modal";
 import type { Country as PickerCountry } from "react-native-country-picker-modal";
 import { create } from "zustand";
 
 import * as db from "../db";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../lib/haptics";
 
 // Cache for countries data — preloaded on import, sorted once by calling code length
 let countriesCache: PickerCountry[] | null = null;
@@ -123,13 +124,31 @@ interface AppStore {
   toggleClipboardDetection: () => void;
   notificationSound: boolean;
   toggleNotificationSound: () => void;
+  hapticFeedback: boolean;
+  toggleHapticFeedback: () => void;
+  theme: "system" | "light" | "dark";
+  setTheme: (theme: "system" | "light" | "dark") => void;
+  backupFrequency: "hourly" | "daily" | "weekly";
+  setBackupFrequency: (freq: "hourly" | "daily" | "weekly") => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
   phoneNumber: "",
   rawPhoneNumber: "",
-  selectedCountry: { code: "+254", country: "KE", flag: "🇰🇪" },
-  selectedCountryCode: "+254",
+  selectedCountry: (() => {
+    try {
+      const raw = db.getSetting("selectedCountry");
+      if (raw) return JSON.parse(raw) as Country;
+    } catch { /* fall through */ }
+    return { code: "+254", country: "KE", flag: "🇰🇪" };
+  })(),
+  selectedCountryCode: (() => {
+    try {
+      const raw = db.getSetting("selectedCountry");
+      if (raw) return (JSON.parse(raw) as Country).code;
+    } catch { /* fall through */ }
+    return "+254";
+  })(),
   isCountryPickerOpen: false,
   messageText: "",
   contactNames: {},
@@ -158,11 +177,72 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set((s) => ({ customTags: s.customTags.filter((t) => t !== tag) }));
   },
 
-  clipboardDetection: true,
-  toggleClipboardDetection: () => set((s) => ({ clipboardDetection: !s.clipboardDetection })),
+  clipboardDetection: (() => {
+    try {
+      const raw = db.getSetting("clipboardDetection");
+      if (raw !== undefined) return raw === "1";
+    } catch { /* fall through */ }
+    return true;
+  })(),
+  toggleClipboardDetection: () =>
+    set((s) => {
+      const next = !s.clipboardDetection;
+      db.setSetting("clipboardDetection", next ? "1" : "0");
+      return { clipboardDetection: next };
+    }),
 
-  notificationSound: true,
-  toggleNotificationSound: () => set((s) => ({ notificationSound: !s.notificationSound })),
+  notificationSound: (() => {
+    try {
+      const raw = db.getSetting("notificationSound");
+      if (raw !== undefined) return raw === "1";
+    } catch { /* fall through */ }
+    return true;
+  })(),
+  toggleNotificationSound: () =>
+    set((s) => {
+      const next = !s.notificationSound;
+      db.setSetting("notificationSound", next ? "1" : "0");
+      return { notificationSound: next };
+    }),
+
+  theme: (() => {
+    try {
+      const raw = db.getSetting("theme");
+      if (raw === "light" || raw === "dark") return raw;
+    } catch { /* fall through */ }
+    return "system";
+  })(),
+  setTheme: (theme) => {
+    set({ theme });
+    Uniwind.setTheme(theme);
+    db.setSetting("theme", theme);
+  },
+
+  backupFrequency: (() => {
+    try {
+      const raw = db.getSetting("backupFrequency");
+      if (raw === "hourly" || raw === "daily" || raw === "weekly") return raw;
+    } catch { /* fall through */ }
+    return "daily";
+  })(),
+  setBackupFrequency: (freq) => {
+    db.setSetting("backupFrequency", freq);
+    set({ backupFrequency: freq });
+  },
+
+  hapticFeedback: (() => {
+    try {
+      const raw = db.getSetting("hapticFeedback");
+      if (raw !== undefined) return raw === "1";
+    } catch { /* fall through */ }
+    return true;
+  })(),
+  toggleHapticFeedback: () =>
+    set((s) => {
+      const next = !s.hapticFeedback;
+      db.setSetting("hapticFeedback", next ? "1" : "0");
+      return { hapticFeedback: next };
+    }),
 
   setPhoneNumber: (phone) => {
     const cleaned = phone.replace(/\D/g, "");
@@ -175,7 +255,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const code = matched.callingCode?.[0] ?? "";
         const phoneWithoutCode = cleaned.substring(code.length);
         const formatted = formatPhoneNumber(phoneWithoutCode);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        haptics.impactAsync(ImpactFeedbackStyle.Light);
         set({
           selectedCountry: { code: `+${code}`, country: matched.cca2, flag: matched.flag || "" },
           selectedCountryCode: `+${code}`,
@@ -196,7 +276,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (retry) {
           const code = retry.callingCode?.[0] ?? "";
           const phoneWithoutCode = cleaned.substring(code.length);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          haptics.impactAsync(ImpactFeedbackStyle.Light);
           set({
             selectedCountry: { code: `+${code}`, country: retry.cca2, flag: retry.flag || "" },
             selectedCountryCode: `+${code}`,
@@ -231,7 +311,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setSelectedCountry: (country) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(ImpactFeedbackStyle.Light);
+    db.setSetting("selectedCountry", JSON.stringify(country));
     set({ selectedCountry: country, selectedCountryCode: country.code });
   },
 
@@ -242,7 +323,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (!rawPhoneNumber.trim()) return;
 
     // Haptic feedback on button press
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await haptics.impactAsync(ImpactFeedbackStyle.Medium);
 
     const digits = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
     const fullNumber = `+${digits}`;
@@ -261,14 +342,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Open WhatsApp - Android will show chooser if both apps are installed
     Linking.openURL(whatsappUrl);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
   },
 
   startCall: async () => {
     const { rawPhoneNumber, selectedCountry } = get();
     if (!rawPhoneNumber.trim()) return;
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await haptics.impactAsync(ImpactFeedbackStyle.Medium);
 
     const digits = `${selectedCountry.code}${rawPhoneNumber}`.replace(/\D/g, "");
     const fullNumber = `+${digits}`;
@@ -284,7 +365,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       .catch(() => {});
 
     Linking.openURL(`tel:${fullNumber}`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
   },
 
   openDialer: (countryCode, phoneNumber) => {
@@ -294,7 +375,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       () => {},
     );
     Linking.openURL(`tel:+${digits}`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
   },
 
   openWhatsApp: (countryCode, phoneNumber) => {
@@ -304,7 +385,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       () => {},
     );
     Linking.openURL(`whatsapp://send?phone=+${digits}`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
   },
 
   saveContact: async (countryCode, phoneNumber) => {
@@ -317,7 +398,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           type: "vnd.android.cursor.dir/raw_contact",
           extra: { phone: fullNumber },
         });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        haptics.notificationAsync(NotificationFeedbackType.Success);
       } catch {
         // User cancelled
       }
@@ -330,7 +411,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           name: "",
           phoneNumbers: [{ number: fullNumber, label: "mobile", id: "" }],
         } as any);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        haptics.notificationAsync(NotificationFeedbackType.Success);
       } catch {
         // User cancelled
       }
@@ -422,7 +503,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectRecentContact: (contact) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(ImpactFeedbackStyle.Light);
     const country = {
       code: contact.countryCode,
       country: contact.country,
@@ -438,7 +519,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   deleteRecentContact: async (phoneNumber) => {
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await haptics.impactAsync(ImpactFeedbackStyle.Medium);
       await db.deleteContact(phoneNumber);
       get().loadRecentContacts();
     } catch (error) {
@@ -458,11 +539,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       db.clearAllRecent();
       set({ recentContacts: [] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Failed to clear recent contacts:", error);
     }
   },
 }));
+
+// Restore persisted theme immediately on app startup (before first render)
+Uniwind.setTheme(useAppStore.getState().theme);
 
 export type { Country };

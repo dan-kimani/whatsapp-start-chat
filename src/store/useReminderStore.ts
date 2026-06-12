@@ -1,9 +1,9 @@
-import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import Toast from "react-native-toast-message";
 import { create } from "zustand";
 
 import * as db from "../db";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../lib/haptics";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -178,7 +178,7 @@ export const useReminderStore = create<ReminderStore>((set) => ({
         trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
       });
       db.updateReminderNotification(editReminder.id, notifId);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(NotificationFeedbackType.Success);
       Toast.show({
         type: "success",
         text1: "Reminder updated",
@@ -205,7 +205,7 @@ export const useReminderStore = create<ReminderStore>((set) => ({
         trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
       });
       db.updateReminderNotification(reminderId, notifId);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(NotificationFeedbackType.Success);
       Toast.show({
         type: "success",
         text1: "Reminder set",

@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { create } from "zustand";
 
@@ -6,6 +5,7 @@ import type { ReminderData } from "../components/Reminders/ReminderItem";
 import * as db from "../db";
 import { useAppStore } from "./useAppStore";
 import type { ReminderEditData } from "./useReminderStore";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../lib/haptics";
 
 type MenuMode = "active" | "completed";
 
@@ -71,13 +71,13 @@ export const useRemindersPageStore = create<RemindersPageStore>((set) => ({
 
   completeReminder: (id) => {
     db.completeReminder(id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
     set({ reminders: db.getAllReminders() });
   },
 
   reopenReminder: (id) => {
     db.reopenReminder(id);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
     set({ reminders: db.getAllReminders() });
   },
 
@@ -96,6 +96,6 @@ export const useRemindersPageStore = create<RemindersPageStore>((set) => ({
     const digits = `${r.countryCode}${r.phoneNumber}`.replace(/\D/g, "");
     const msgParam = r.message ? `&text=${encodeURIComponent(r.message)}` : "";
     Linking.openURL(`whatsapp://send?phone=+${digits}${msgParam}`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.notificationAsync(NotificationFeedbackType.Success);
   },
 }));
