@@ -61,3 +61,8 @@ export const reminders = sqliteTable("reminders", {
 export const customTags = sqliteTable("custom_tags", {
   name: text("name").primaryKey(),
 });
+
+export const settings = sqliteTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});

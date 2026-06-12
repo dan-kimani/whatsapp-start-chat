@@ -8,6 +8,7 @@ import {
   messageTemplates,
   recentContacts,
   reminders,
+  settings,
 } from "./schema";
 
 // -- Recent Contacts --
@@ -283,6 +284,17 @@ export function updateReminder(
 
 export function deleteReminderById(id: number) {
   db.delete(reminders).where(eq(reminders.id, id)).run();
+}
+
+// -- Settings --
+
+export function getSetting(key: string): string | undefined {
+  return db.select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get()
+    ?.value;
+}
+
+export function setSetting(key: string, value: string) {
+  db.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 }
 
 export function getPendingReminders() {
