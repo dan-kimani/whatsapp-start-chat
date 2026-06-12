@@ -10,17 +10,30 @@ import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import { Uniwind } from "uniwind";
+
+import { useAppStore } from "../store/useAppStore";
 
 export default function Layout() {
+  const notificationSound = useAppStore((s) => s.notificationSound);
+  const theme = useAppStore((s) => s.theme);
+
+  // Restore persisted theme on app startup
+  useEffect(() => {
+    Uniwind.setTheme(theme);
+  }, []);
+
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: notificationSound,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  }, [notificationSound]);
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, string> | null;

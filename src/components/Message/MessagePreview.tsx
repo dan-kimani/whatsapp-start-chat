@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, View, useColorScheme } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { useIsDark } from "../../hooks/useIsDark";
 
 interface Props {
   text: string;
@@ -67,7 +68,7 @@ function parseLine(line: string): Segment[] {
 
 export default function MessagePreview({ text }: Props) {
   const [expanded, setExpanded] = useState(true);
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const baseColor = isDark ? "#e2e8f0" : "#334155";
   const dimColor = isDark ? "#64748b" : "#94a3b8";
 

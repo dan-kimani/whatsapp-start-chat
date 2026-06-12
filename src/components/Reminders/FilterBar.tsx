@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Plus, Star, Tag, X } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View, useColorScheme } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { useIsDark } from "../../hooks/useIsDark";
 
 interface Props {
   filter: string;
@@ -21,7 +22,7 @@ export default function FilterBar({
   onTagPickerOpen,
   onCreateTag,
 }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const isTagActive = filter !== "all" && filter !== "today" && filter !== "priority";
 
   const [isAdding, setIsAdding] = useState(false);

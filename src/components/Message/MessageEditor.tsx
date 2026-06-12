@@ -1,8 +1,9 @@
 import { useRef } from "react";
-import { TextInput, View, useColorScheme } from "react-native";
+import { TextInput, View } from "react-native";
 
 import FormatBar, { applyFormat } from "./FormatBar";
 import MessagePreview from "./MessagePreview";
+import { useIsDark } from "../../hooks/useIsDark";
 
 interface Props {
   value: string;
@@ -12,7 +13,7 @@ interface Props {
 
 export default function MessageEditor({ value, onChangeText, placeholder = "Message..." }: Props) {
   const selection = useRef({ start: 0, end: 0 });
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
 
   return (
     <View>

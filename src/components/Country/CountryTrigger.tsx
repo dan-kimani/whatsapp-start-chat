@@ -1,14 +1,15 @@
 import { ChevronDown } from "lucide-react-native";
-import { Pressable, Text, View, useColorScheme } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import CountryFlag from "react-native-country-flag";
 import type { CountryCode } from "react-native-country-picker-modal";
 
 import { useAppStore } from "../../store/useAppStore";
+import { useIsDark } from "../../hooks/useIsDark";
 
 export default function CountryTrigger() {
   const selectedCountry = useAppStore((s) => s.selectedCountry);
   const setOpen = useAppStore((s) => s.setCountryPickerOpen);
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
 
   return (
     <>

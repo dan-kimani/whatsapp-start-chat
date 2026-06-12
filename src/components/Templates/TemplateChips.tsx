@@ -1,10 +1,11 @@
 import * as Clipboard from "expo-clipboard";
-import * as Haptics from "expo-haptics";
 import { Copy, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View, useColorScheme } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useAppStore } from "../../store/useAppStore";
+import { useIsDark } from "../../hooks/useIsDark";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../../lib/haptics";
 
 interface Props {
   onSelect: (text: string) => void;
@@ -17,7 +18,7 @@ export default function TemplateChips({ onSelect }: Props) {
   const deleteTemplate = useAppStore((s) => s.deleteTemplate);
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
 
   useEffect(() => {
     loadTemplates();
@@ -55,7 +56,7 @@ export default function TemplateChips({ onSelect }: Props) {
             <Pressable
               onPress={() => {
                 Clipboard.setStringAsync(t.text);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                haptics.impactAsync(ImpactFeedbackStyle.Light);
               }}
               className="ml-0.5 p-0.5"
               hitSlop={6}

@@ -6,11 +6,12 @@ import {
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import { Search, Star, Sun, Tag, X } from "lucide-react-native";
 import { useEffect, useRef } from "react";
-import { Pressable, ScrollView, Text, TextInput, View, useColorScheme } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppStore } from "../../store/useAppStore";
 import { type ReminderEditData, PRESETS, useReminderStore } from "../../store/useReminderStore";
+import { useIsDark } from "../../hooks/useIsDark";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ export default function ReminderSheet({
   onClose,
   onSaved,
 }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const insets = useSafeAreaInsets();
   const sheetRef = useRef<BottomSheetMethods>(null);
   const store = useReminderStore();
@@ -303,14 +304,18 @@ export default function ReminderSheet({
                     </Pressable>
                   )}
                 </View>
-                <ScrollView style={{ maxHeight: 110 }} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                  style={{ maxHeight: 110 }}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
                   <View className="flex-row flex-wrap gap-2">
                     {filteredTags.map((tag) => {
                       const selected = store.tags.includes(tag);
                       return (
                         <Pressable
                           key={tag}
-                          onPress={() => store.toggleTag(tag)}
+                          onPressIn={() => store.toggleTag(tag)}
                           className={`flex-row items-center gap-1 rounded-xl border px-3 py-2 ${selected ? "border-indigo-500 bg-indigo-500" : "border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"}`}
                         >
                           <Tag size={12} color={selected ? "#fff" : "#9ca3af"} />

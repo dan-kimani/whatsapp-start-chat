@@ -5,11 +5,12 @@ import {
 } from "@expo/ui/community/bottom-sheet";
 import { Search, Tag, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View, useColorScheme } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import * as db from "../../db";
 import { useAppStore } from "../../store/useAppStore";
+import { useIsDark } from "../../hooks/useIsDark";
 
 interface Props {
   visible: boolean;
@@ -32,7 +33,7 @@ export default function NoteSheet({
   onClose,
   onSave,
 }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const insets = useSafeAreaInsets();
   const sheetRef = useRef<BottomSheetMethods>(null);
   const [note, setNote] = useState("");

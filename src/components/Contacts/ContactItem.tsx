@@ -1,9 +1,8 @@
 import { formatDistanceToNow } from "date-fns";
-import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { ChevronDown, Clock, MoreVertical, PencilLine, Tag } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, Text, View, useColorScheme, useWindowDimensions } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import CountryFlag from "react-native-country-flag";
 import { CountryCode } from "react-native-country-picker-modal";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -12,6 +11,8 @@ import { formatPhoneNumber, getCountryName } from "../../store/useAppStore";
 import ContactMenu from "./ContactMenu";
 import SwipeDeleteAction from "./SwipeDeleteAction";
 import SwipeSmsAction from "./SwipeSmsAction";
+import { useIsDark } from "../../hooks/useIsDark";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../../lib/haptics";
 
 interface RecentContact {
   phoneNumber: string;
@@ -48,7 +49,7 @@ export default function ContactItem({
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 16 });
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const { height: screenHeight } = useWindowDimensions();
 
   const hasNote = !!contact.notes;
@@ -57,9 +58,9 @@ export default function ContactItem({
     if (direction === "right") {
       const digits = `${contact.countryCode}${contact.phoneNumber}`.replace(/\D/g, "");
       Linking.openURL(`sms:+${digits}`);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      haptics.notificationAsync(NotificationFeedbackType.Success);
     } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      haptics.notificationAsync(NotificationFeedbackType.Warning);
       onDelete();
     }
   };

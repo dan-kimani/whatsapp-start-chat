@@ -1,10 +1,10 @@
 import * as Clipboard from "expo-clipboard";
-import * as Haptics from "expo-haptics";
 import { Copy, X } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 
 import MessageEditor from "../Message/MessageEditor";
+import { haptics, ImpactFeedbackStyle, NotificationFeedbackType } from "../../lib/haptics";
 
 interface Props {
   template: { id: number; text: string };
@@ -29,7 +29,7 @@ export default function TemplateItem({ template: t, onDelete, onUpdate }: Props)
 
   const handleCopy = () => {
     Clipboard.setStringAsync(t.text);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptics.impactAsync(ImpactFeedbackStyle.Light);
   };
 
   const handleDelete = () => {

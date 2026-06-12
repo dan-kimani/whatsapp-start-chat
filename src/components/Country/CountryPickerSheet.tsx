@@ -10,7 +10,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from "react-native";
 import CountryFlag from "react-native-country-flag";
@@ -18,6 +17,7 @@ import type { Country as PickerCountry } from "react-native-country-picker-modal
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { loadCountries, useAppStore } from "../../store/useAppStore";
+import { useIsDark } from "../../hooks/useIsDark";
 
 const ROW_HEIGHT = 52;
 const SHEET_RATIO = 0.75;
@@ -35,10 +35,11 @@ export default function CountryPickerSheet() {
 
   const [countries, setCountries] = useState<PickerCountry[]>([]);
   const [query, setQuery] = useState("");
+  const pendingSelection = useRef<PickerCountry | null>(null);
 
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const listRef = useRef<FlatList<PickerCountry>>(null);
   const searchRef = useRef<TextInput>(null);
 
@@ -78,6 +79,15 @@ export default function CountryPickerSheet() {
     ]).start(() => {
       setOpen(false);
       setQuery("");
+      // Apply pending selection after close animation to avoid flash
+      if (pendingSelection.current) {
+        setSelectedCountry({
+          code: `+${pendingSelection.current.callingCode[0]}`,
+          country: pendingSelection.current.cca2,
+          flag: pendingSelection.current.flag || "",
+        });
+        pendingSelection.current = null;
+      }
     });
   };
 
@@ -92,11 +102,7 @@ export default function CountryPickerSheet() {
   }, [countries, query]);
 
   const select = (country: PickerCountry) => {
-    setSelectedCountry({
-      code: `+${country.callingCode[0]}`,
-      country: country.cca2,
-      flag: country.flag || "",
-    });
+    pendingSelection.current = country;
     close();
   };
 

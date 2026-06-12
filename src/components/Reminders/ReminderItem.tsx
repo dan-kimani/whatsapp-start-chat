@@ -1,7 +1,8 @@
 import { Check, Clock, MoreVertical, Star, Sun, Tag } from "lucide-react-native";
-import { Pressable, Text, View, useColorScheme, useWindowDimensions } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 
 import { formatPhoneNumber } from "../../store/useAppStore";
+import { useIsDark } from "../../hooks/useIsDark";
 
 export interface ReminderData {
   id: number;
@@ -29,7 +30,7 @@ export default function ReminderItem({
   isCompleted = false,
   onMenuOpen,
 }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const { height: screenHeight } = useWindowDimensions();
 
   const menuHeight = isCompleted ? 136 : 176;

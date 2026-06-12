@@ -1,5 +1,6 @@
 import { Tag, X } from "lucide-react-native";
-import { Modal, Pressable, ScrollView, Text, View, useColorScheme } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useIsDark } from "../../hooks/useIsDark";
 
 interface Props {
   visible: boolean;
@@ -20,7 +21,7 @@ export default function TagPickerModal({
   onDelete,
   onClose,
 }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
