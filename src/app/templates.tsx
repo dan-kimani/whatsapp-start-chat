@@ -1,11 +1,12 @@
-import { router } from "expo-router";
-import { ArrowLeft, Plus } from "lucide-react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { Plus } from "lucide-react-native";
+import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import MessageEditor from "../components/Message/MessageEditor";
 import TemplateItem from "../components/Templates/TemplateItem";
+import PageHeader from "../components/ui/PageHeader";
 import { useAppStore } from "../store/useAppStore";
 
 export default function TemplatesPage() {
@@ -18,9 +19,11 @@ export default function TemplatesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
+  useFocusEffect(
+    useCallback(() => {
+      loadTemplates();
+    }, [loadTemplates]),
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -42,15 +45,7 @@ export default function TemplatesPage() {
 
   return (
     <View className="flex-1 bg-white dark:bg-gray-950" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2">
-          <ArrowLeft size={22} color="#6b7280" />
-        </Pressable>
-        <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
-          Quick Responses
-        </Text>
-        <View style={{ width: 38 }} />
-      </View>
+      <PageHeader title="Quick Responses" />
 
       <View className="mb-4 px-5">
         <MessageEditor value={newText} onChangeText={setNewText} placeholder="Add a template..." />

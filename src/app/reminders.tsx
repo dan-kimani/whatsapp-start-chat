@@ -1,6 +1,6 @@
-import { router } from "expo-router";
-import { ArrowLeft, Bell, CalendarDays, List } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { Bell, CalendarDays, List } from "lucide-react-native";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,6 +9,7 @@ import FilterBar from "../components/Reminders/FilterBar";
 import ReminderItem from "../components/Reminders/ReminderItem";
 import ReminderMenu from "../components/Reminders/ReminderMenu";
 import ReminderSheet from "../components/Reminders/ReminderSheet";
+import PageHeader from "../components/ui/PageHeader";
 import TagPickerModal from "../components/Reminders/TagPickerModal";
 import { useAppStore } from "../store/useAppStore";
 import { useRemindersPageStore } from "../store/useRemindersPageStore";
@@ -26,9 +27,11 @@ export default function RemindersPage() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    store.load();
-  }, [store.load]);
+  useFocusEffect(
+    useCallback(() => {
+      store.load();
+    }, [store.load]),
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -167,24 +170,21 @@ export default function RemindersPage() {
 
   return (
     <View className="flex-1 bg-white dark:bg-gray-950" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2">
-          <ArrowLeft size={22} color="#6b7280" />
-        </Pressable>
-        <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
-          Reminders
-        </Text>
-        <Pressable
-          onPress={() => store.setViewMode(store.viewMode === "list" ? "calendar" : "list")}
-          className="p-2"
-        >
-          {store.viewMode === "calendar" ? (
-            <List size={22} color="#6b7280" />
-          ) : (
-            <CalendarDays size={22} color="#6b7280" />
-          )}
-        </Pressable>
-      </View>
+      <PageHeader
+        title="Reminders"
+        right={
+          <Pressable
+            onPress={() => store.setViewMode(store.viewMode === "list" ? "calendar" : "list")}
+            className="p-2"
+          >
+            {store.viewMode === "calendar" ? (
+              <List size={22} color="#6b7280" />
+            ) : (
+              <CalendarDays size={22} color="#6b7280" />
+            )}
+          </Pressable>
+        }
+      />
 
       {store.viewMode === "list" && (
         <FilterBar

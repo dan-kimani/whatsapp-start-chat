@@ -1,6 +1,6 @@
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { ChevronRight, Plus, SendHorizontal } from "lucide-react-native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -13,9 +13,11 @@ export default function BroadcastList() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadList();
-  }, [loadList]);
+  useFocusEffect(
+    useCallback(() => {
+      loadList();
+    }, [loadList]),
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);

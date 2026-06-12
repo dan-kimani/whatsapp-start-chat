@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Check, Circle, Plus, SendHorizontal, Trash2, X } from "lucide-react-native";
+import { Check, Circle, Plus, SendHorizontal, Trash2, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Alert, AppState, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,6 +8,7 @@ import MessageEditor from "../../components/Message/MessageEditor";
 import TemplateChips from "../../components/Templates/TemplateChips";
 import { formatPhoneNumber, useAppStore } from "../../store/useAppStore";
 import { useBroadcastStore } from "../../store/useBroadcastStore";
+import PageHeader from "../../components/ui/PageHeader";
 
 export default function BroadcastDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -77,17 +78,14 @@ export default function BroadcastDetail() {
 
   return (
     <View className="flex-1 bg-white dark:bg-gray-950" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2">
-          <ArrowLeft size={22} className="text-gray-400 dark:text-gray-500" />
-        </Pressable>
-        <Text className="flex-1 text-center text-lg font-bold text-gray-900 dark:text-gray-100">
-          Broadcast
-        </Text>
-        <Pressable onPress={handleDeleteBroadcast} className="p-2">
-          <Trash2 size={20} color="#ef4444" />
-        </Pressable>
-      </View>
+      <PageHeader
+        title="Broadcast"
+        right={
+          <Pressable onPress={handleDeleteBroadcast} className="p-2">
+            <Trash2 size={20} color="#ef4444" />
+          </Pressable>
+        }
+      />
 
       {contacts.length > 0 && (
         <View className="mb-2 px-5">
