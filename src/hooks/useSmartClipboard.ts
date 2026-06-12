@@ -6,13 +6,14 @@ import { useAppStore } from "../store/useAppStore";
 
 export function useSmartClipboard(currentRawValue: string) {
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);
+  const clipboardDetection = useAppStore((s) => s.clipboardDetection);
   const rawValueRef = useRef(currentRawValue);
   rawValueRef.current = currentRawValue;
 
   useEffect(() => {
     const checkClipboard = async () => {
-      // Respect clipboard detection setting
-      if (!useAppStore.getState().clipboardDetection) {
+      // Immediately clear if detection is disabled
+      if (!clipboardDetection) {
         setClipboardContent(null);
         return;
       }
@@ -26,7 +27,7 @@ export function useSmartClipboard(currentRawValue: string) {
       const content = await Clipboard.getStringAsync();
 
       // Simple validation: Allow +, spaces, dashes, parentheses
-      // Must contain at least 5 digits to be worth pasting
+      // Must contain at least 6 digits to be worth pasting
       const digitCount = (content.match(/\d/g) || []).length;
       const validChars = /^[+\d\s\-().]*$/;
 
@@ -40,7 +41,7 @@ export function useSmartClipboard(currentRawValue: string) {
       }
     };
 
-    // Check immediately and on every app focus
+    // Check immediately when detection is toggled on or app starts
     checkClipboard();
 
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -52,7 +53,7 @@ export function useSmartClipboard(currentRawValue: string) {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [clipboardDetection]);
 
   return clipboardContent;
 }
